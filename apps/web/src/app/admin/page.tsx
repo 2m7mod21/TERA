@@ -1,30 +1,15 @@
-import {
-  getDashboardStats,
-  getAdminUsers,
-  getModerationQueue,
-  getAnalyticsChartData,
-} from "@/server/actions/admin";
-import { auth } from "@/server/auth/config";
-import { redirect } from "next/navigation";
-import AdminClient from "@/components/AdminClient";
+import { getDashboardStats, getNeedsAttentionItems, getActivityChart } from "@/server/actions/admin/dashboard";
+import { requireAdminPage } from "@/lib/adminAuth";
+import DashboardClient from "@/components/admin/DashboardClient";
 
-export default async function AdminPage() {
-  const session = await auth();
-  if (!session?.user?.isAdmin) redirect("/");
+export const metadata = { title: "Dashboard — TERA Admin" };
 
-  const [stats, users, reports, chartData] = await Promise.all([
+export default async function AdminDashboardPage() {
+  await requireAdminPage("dashboard");
+  const [stats, attentionItems, chartData] = await Promise.all([
     getDashboardStats(),
-    getAdminUsers(),
-    getModerationQueue(),
-    getAnalyticsChartData(),
+    getNeedsAttentionItems(),
+    getActivityChart(),
   ]);
-
-  return (
-    <AdminClient
-      stats={stats}
-      users={users}
-      reports={reports}
-      chartData={chartData}
-    />
-  );
+  return <DashboardClient stats={stats} attentionItems={attentionItems} chartData={chartData} />;
 }

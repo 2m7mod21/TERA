@@ -71,7 +71,13 @@ model User {
 
   // Feedback & Reports
   reports               Report[]               @relation("Reporter")
+  reportedReports       Report[]               @relation("ReportedUser")
+  assignedReports       Report[]               @relation("AssignedModerator")
   moderatorFlags        ModerationQueue[]      @relation("Moderator")
+  reportActions         ReportAction[]
+  violations            UserViolation[]        @relation("ViolationUser")
+  appeals               Appeal[]               @relation("AppealUser")
+  reviewedAppeals       Appeal[]               @relation("AppealReviewer")
   votes                 PollVote[]
 
   // Feed personalization
@@ -92,7 +98,12 @@ model User {
 
   // Analytics
   analyticsEvents       AnalyticsEvent[]
+
+  // Admin
+  adminUser             AdminUser?
+  supportTickets        SupportTicket[]
 }
+
 
 model Profile {
   id                String   @id @default(uuid())
@@ -670,16 +681,102 @@ model PollVote {
 // ─────────────────────────────────────────────
 
 model Report {
+  id                   String         @id @default(uuid())
+  // Who reported
+  reporterId           String
+  reporter             User           @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  // Who is reported
+  reportedUserId       String?
+  reportedUser         User?          @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  // Polymorphic content reference
+  contentType          String         // POST | COMMENT | MESSAGE | USER | STORY | REEL | IMAGE | VIDEO
+  contentId            String         // ID of the reported content
+  // Legacy post relation (kept for backward compat)
+  postId               String?
+  post                 Post?          @relation(fields: [postId], references: [id], onDelete: SetNull)
+  // Report details
+  category             String         @default("OTHER")  // SAFETY | ABUSE | SPAM | FRAUD | SEXUAL | IP | OTHER
+  reason               String         // specific reason within category
+  details              String?        // free-text description
+  attachments          String         @default("[]")    // JSON: [{url, type}]
+  // Workflow
+  status               String         @default("PENDING") // PENDING | UNDER_REVIEW | RESOLVED | IGNORED | APPEALED
+  priority             String         @default("MEDIUM")  // LOW | MEDIUM | HIGH | CRITICAL
+  assignedModeratorId  String?
+  assignedModerator    User?          @relation("AssignedModerator", fields: [assignedModeratorId], references: [id], onDelete: SetNull)
+  resolvedAt           DateTime?
+  // AI moderation fields (for future AI integration)
+  aiScore              Float?
+  aiCategory           String?
+  aiResult             String?
+  aiConfidence         Float?
+  // Timestamps
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  // Relations
+  actions              ReportAction[]
+  violations           UserViolation[]
+
+  @@index([status, priority, createdAt])
+  @@index([contentType, contentId])
+  @@index([reportedUserId, createdAt])
+  @@index([reporterId, createdAt])
+}
+
+model ReportAction {
   id         String   @id @default(uuid())
-  reporterId String
-  reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  postId     String?
-  post       Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reason     String
-  details    String?  // free-text from reporter
-  status     String   @default("PENDING") // PENDING, RESOLVED, IGNORED
-  priority   Int      @default(1)         // auto-raised on repeated reports
+  reportId   String
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  actionType String   // ASSIGNED | DISMISSED | CONTENT_DELETED | CONTENT_HIDDEN | CONTENT_RESTORED | USER_WARNED | USER_RESTRICTED | USER_SUSPENDED | USER_BANNED | APPEAL_APPROVED | APPEAL_REJECTED | NOTE_ADDED
+  reason     String?
+  notes      String?
+  metadata   String   @default("{}")
   createdAt  DateTime @default(now())
+
+  @@index([reportId, createdAt])
+  @@index([adminId, createdAt])
+}
+
+model UserViolation {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation("ViolationUser", fields: [userId], references: [id], onDelete: Cascade)
+  reportId      String?
+  report        Report?   @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  violationType String    // SPAM | HATE_SPEECH | HARASSMENT | VIOLENCE | FRAUD | SEXUAL | COPYRIGHT | OTHER
+  severity      String    @default("LOW")    // LOW | MEDIUM | HIGH | CRITICAL
+  strikeNumber  Int       @default(1)         // cumulative strike count at time of violation
+  actionTaken   String    // WARNING | FEATURE_RESTRICT | TEMP_SUSPEND | PERM_BAN
+  expiresAt     DateTime?  // for temp suspensions
+  isActive      Boolean   @default(true)
+  issuedBy      String?    // admin user ID
+  createdAt     DateTime  @default(now())
+  appeal        Appeal?
+
+  @@index([userId, createdAt])
+  @@index([isActive, userId])
+}
+
+model Appeal {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation("AppealUser", fields: [userId], references: [id], onDelete: Cascade)
+  violationId   String        @unique
+  violation     UserViolation @relation(fields: [violationId], references: [id], onDelete: Cascade)
+  reason        String
+  explanation   String
+  status        String        @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewedBy    String?
+  reviewer      User?         @relation("AppealReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewNote    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, status])
 }
 
 model ModerationQueue {
@@ -785,3 +882,148 @@ model FeatureFlag {
   isEnabled   Boolean  @default(false)
   description String?
 }
+
+// ─────────────────────────────────────────────
+// Admin RBAC Models
+// ─────────────────────────────────────────────
+
+model AdminRole {
+  id          String      @id @default(uuid())
+  name        String      @unique // OWNER, SUPER_ADMIN, MODERATOR, SUPPORT, ANALYST
+  permissions String      @default("{}") // JSON: {section: {read, write, delete}}
+  createdAt   DateTime    @default(now())
+  admins      AdminUser[]
+}
+
+model AdminUser {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      AdminRole @relation(fields: [roleId], references: [id])
+  invitedBy String?
+  createdAt DateTime  @default(now())
+}
+
+// ─────────────────────────────────────────────
+// Admin Audit Log
+// ─────────────────────────────────────────────
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String?
+  targetId   String?
+  oldValue   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+}
+
+// ─────────────────────────────────────────────
+// Platform Stats Cache
+// ─────────────────────────────────────────────
+
+model PlatformStat {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Float    @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// Platform Settings
+// ─────────────────────────────────────────────
+
+model PlatformSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// Support Tickets
+// ─────────────────────────────────────────────
+
+model SupportTicket {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject    String
+  status     String          @default("OPEN")
+  assignedTo String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  messages   TicketMessage[]
+
+  @@index([status, createdAt])
+}
+
+model TicketMessage {
+  id        String        @id @default(uuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  content   String
+  isAdmin   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+}
+
+// ─────────────────────────────────────────────
+// Ad Campaigns
+// ─────────────────────────────────────────────
+
+model AdCampaign {
+  id             String   @id @default(uuid())
+  ownerId        String
+  title          String
+  creative       String?
+  targetAudience String   @default("{}")
+  budget         Float
+  spent          Float    @default(0)
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("PENDING")
+  rejectedReason String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Mass Notifications
+// ─────────────────────────────────────────────
+
+model MassNotification {
+  id          String    @id @default(uuid())
+  title       String
+  body        String
+  target      String    @default("ALL")
+  sentBy      String
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  status      String    @default("SCHEDULED")
+  reachCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([status, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Blocked IPs
+// ─────────────────────────────────────────────
+
+model BlockedIP {
+  id        String   @id @default(uuid())
+  ip        String   @unique
+  reason    String?
+  addedBy   String
+  createdAt DateTime @default(now())
+}
+

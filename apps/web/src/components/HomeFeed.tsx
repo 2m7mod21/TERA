@@ -23,6 +23,7 @@ import {
   BarChart2, Heart, Repeat2,
 } from "lucide-react";
 import ReactionsModal from "./ReactionsModal";
+import ReportModal from "@/components/ReportModal";
 
 
 
@@ -409,11 +410,11 @@ function OverflowMenu({
   onDeleted: () => void;
   onEdited: (content: string) => void;
   onClose: () => void;
+  onReportClick: () => void;
 }) {
   const isAuthor = post.userId === currentUserId;
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content ?? "");
-  const [reported, setReported] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleHide = async () => {
@@ -424,10 +425,8 @@ function OverflowMenu({
   };
 
   const handleReport = async () => {
-    const { reportPost } = await import("@/server/actions/posts");
-    await reportPost(post.id, "INAPPROPRIATE_CONTENT");
-    setReported(true);
-    setTimeout(onClose, 1200);
+    onReportClick();
+    onClose();
   };
 
   const handleDelete = async () => {
@@ -482,8 +481,7 @@ function OverflowMenu({
             <EyeOff className="w-4 h-4 text-zinc-400" /> Hide Post
           </button>
           <button onClick={handleReport} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-rose-400 hover:bg-zinc-800 transition-colors">
-            {reported ? <Check className="w-4 h-4 text-green-400" /> : <Flag className="w-4 h-4" />}
-            {reported ? "Reported!" : "Report Post"}
+            <Flag className="w-4 h-4" /> Report Post
           </button>
         </>
       )}
@@ -523,6 +521,7 @@ export function PostCard({
   const [isSaved, setIsSaved] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [editedContent, setEditedContent] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [, startTransition] = useTransition();
@@ -715,6 +714,7 @@ export function PostCard({
                 onHide={() => setHidden(true)}
                 onDeleted={() => setDeleted(true)}
                 onEdited={(c) => setEditedContent(c)}
+                onReportClick={() => setReportOpen(true)}
                 onClose={() => setShowMenu(false)}
               />
             )}
@@ -959,6 +959,18 @@ export function PostCard({
             </form>
           </div>
         </div>,
+        document.body
+      )}
+
+      {/* Report Modal */}
+      {reportOpen && typeof document !== 'undefined' && createPortal(
+        <ReportModal
+          contentType="POST"
+          contentId={displayPost.id}
+          reportedUserId={displayPost.userId}
+          contentLabel="Post"
+          onClose={() => setReportOpen(false)}
+        />,
         document.body
       )}
     </article>

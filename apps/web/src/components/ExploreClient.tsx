@@ -34,13 +34,18 @@ function clearHistory() {
 function UserCard({ user, currentUserId }: { user: any; currentUserId: string }) {
   const [following, setFollowing] = useState(false);
   const [pending, start] = useTransition();
-  const profile = user.profile;
-  const isOwn = user.id === currentUserId;
+  const profile = user.profile || user;
+  const actualUser = user.profile ? user : user.user;
+  const actualUserId = user.profile ? user.id : user.userId || user.id;
+  const isOwn = actualUserId === currentUserId;
 
   const toggle = () => start(async () => {
-    const res = following ? await unfollowUser(user.id) : await followUser(user.id);
+    const res = following ? await unfollowUser(actualUserId) : await followUser(actualUserId);
     if (res.success) setFollowing(!following);
   });
+
+  const followerCount = actualUser?._count?.followers ?? actualUser?.followers?.length ?? 0;
+  const postCount = actualUser?._count?.posts ?? 0;
 
   return (
     <div className="glass rounded-2xl p-4 flex items-center gap-3 hover:border-violet-500/20 transition-all">
@@ -57,13 +62,13 @@ function UserCard({ user, currentUserId }: { user: any; currentUserId: string })
         <Link href={`/${profile?.username}`}>
           <div className="flex items-center gap-1.5">
             <p className="font-semibold text-sm text-zinc-100 hover:text-violet-400 transition-colors truncate">{profile?.displayName}</p>
-            {user.verifiedBadge && (
+            {actualUser?.verifiedBadge && (
               <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Verified">✓</span>
             )}
           </div>
         </Link>
         <p className="text-xs text-zinc-500 truncate">@{profile?.username}</p>
-        <p className="text-xs text-zinc-650 mt-0.5">{user._count?.followers ?? 0} followers · {user._count?.posts ?? 0} posts</p>
+        <p className="text-xs text-zinc-650 mt-0.5">{followerCount} followers · {postCount} posts</p>
       </div>
       {!isOwn && (
         <button onClick={toggle} disabled={pending}
@@ -806,7 +811,7 @@ export default function ExploreClient({
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {suggested.map((p: any) => (
-                    <UserCard key={p.id ?? p.userId} user={p.user ?? p} currentUserId={currentUserId} />
+                    <UserCard key={p.id ?? p.userId} user={p} currentUserId={currentUserId} />
                   ))}
                 </div>
               )}

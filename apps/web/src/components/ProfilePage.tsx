@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   followUser, unfollowUser, getOrCreateDM,
-  muteUser, unmuteUser, restrictUser, unrestrictUser, reportProfile
+  muteUser, unmuteUser, restrictUser, unrestrictUser
 } from "@/server/actions/social";
 import { updateProfile, updateAbout, unpinPost } from "@/server/actions/profile";
 import {
@@ -16,6 +16,7 @@ import {
   BookOpen, Languages, Star, GraduationCap, Lightbulb
 } from "lucide-react";
 import { PostCard } from "./HomeFeed";
+import ReportModal from "./ReportModal";
 
 // ─── Follow button ─────────────────────────────────────────────────────────────
 function FollowButton({ targetId, initialFollowing, onToggle }: {
@@ -73,8 +74,6 @@ function ProfileOverflowMenu({ targetId, isMuted, isRestricted }: {
     setOpen(false);
   };
 
-  const REPORT_REASONS = ["Spam", "Fake account", "Hate speech", "Harassment", "Nudity", "Violence", "Other"];
-
   return (
     <div className="relative">
       <button
@@ -104,21 +103,13 @@ function ProfileOverflowMenu({ targetId, isMuted, isRestricted }: {
       )}
 
       {reportOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass rounded-2xl p-6 w-full max-w-sm space-y-3">
-            <h3 className="font-bold text-white">Report Account</h3>
-            <p className="text-zinc-400 text-sm">Why are you reporting this account?</p>
-            <div className="space-y-2">
-              {REPORT_REASONS.map(r => (
-                <button key={r} onClick={async () => { await reportProfile(targetId, r); setReportOpen(false); }}
-                  className="w-full text-left px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm transition-colors">
-                  {r}
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setReportOpen(false)} className="w-full py-2 rounded-xl text-zinc-500 text-sm hover:text-zinc-300">Cancel</button>
-          </div>
-        </div>
+        <ReportModal
+          contentType="USER"
+          contentId={targetId}
+          reportedUserId={targetId}
+          contentLabel="Account"
+          onClose={() => setReportOpen(false)}
+        />
       )}
     </div>
   );
