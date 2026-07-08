@@ -1,0 +1,24 @@
+{
+  "name": "tera-social",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "db:generate": "pnpm --filter db generate",
+    "db:migrate": "pnpm --filter db migrate",
+    "db:seed": "pnpm --filter db seed"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^1.13.0",
+    "typescript": "^5.4.5"
+  }
+}

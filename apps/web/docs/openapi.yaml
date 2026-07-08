@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: TERA Social API
+  description: End-to-end API specification for TERA Social Media Platform
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                displayName:
+                  type: string
+                username:
+                  type: string
+              required:
+                - email
+                - password
+                - displayName
+                - username
+      responses:
+        '200':
+          description: User created successfully
+        '400':
+          description: Validation failure or field conflicts
+  /upload:
+    post:
+      summary: Upload a media file (authenticated)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  url:
+                    type: string
+        '401':
+          description: Unauthorized
+  /socket:
+    get:
+      summary: Upgrade to WebSocket protocol
+      responses:
+        '101':
+          description: Switching Protocols details
