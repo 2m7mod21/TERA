@@ -82,63 +82,76 @@ export async function submitReport(data: z.infer<typeof reportSchema>) {
     return { success: false, error: "You've already reported this content recently." };
   }
 
-  const priority = getPriority(reason);
-  
-  // Also set postId for backward compat if content is a post
-  const postId = contentType === "POST" ? contentId : undefined;
+  try {
+    const priority = getPriority(reason);
+    
+    // Also set postId for backward compat if content is a post
+    const postId = contentType === "POST" ? contentId : undefined;
 
-  const report = await prisma.report.create({
-    data: {
-      reporterId,
-      reportedUserId: reportedUserId ?? null,
-      contentType,
-      contentId,
-      postId: postId ?? null,
-      category,
-      reason,
-      details: details ?? null,
-      attachments: JSON.stringify(attachments ?? []),
-      priority,
-      status: "PENDING",
-    },
-  });
-
-  // Send reporter a confirmation notification
-  await createNotification({
-    receiverId: reporterId,
-    type: "SYSTEM",
-    entityType: "REPORT",
-    entityId: report.id,
-    priority: 0,
-    metadata: JSON.stringify({
-      message: "Your report has been submitted and will be reviewed by our team.",
-      reportId: report.id,
-    }),
-  });
-
-  // Notify all admins for CRITICAL reports
-  if (priority === "CRITICAL") {
-    const admins = await prisma.adminUser.findMany({
-      select: { userId: true },
+    const report = await prisma.report.create({
+      data: {
+        reporterId,
+        reportedUserId: reportedUserId ?? null,
+        contentType,
+        contentId,
+        postId: postId ?? null,
+        category,
+        reason,
+        details: details ?? null,
+        attachments: JSON.stringify(attachments ?? []),
+        priority,
+        status: "PENDING",
+      },
     });
-    await Promise.allSettled(
-      admins.map((a) =>
-        createNotification({
-          receiverId: a.userId,
-          type: "ADMIN",
-          entityType: "REPORT",
-          entityId: report.id,
-          priority: 100,
-          metadata: JSON.stringify({
-            message: `🚨 Critical report submitted: ${reason}`,
-            reportId: report.id,
-          }),
-        })
-      )
-    );
-  }
 
-  return { success: true, reportId: report.id };
+    // Send reporter a confirmation notification
+    try {
+      await createNotification({
+        receiverId: reporterId,
+        type: "SYSTEM",
+        entityType: "REPORT",
+        entityId: report.id,
+        priority: 0,
+        metadata: JSON.stringify({
+          message: "Your report has been submitted and will be reviewed by our team.",
+          reportId: report.id,
+        }),
+      });
+    } catch (notifErr) {
+      console.error("Error creating report confirmation notification:", notifErr);
+    }
+
+    // Notify all admins for CRITICAL reports
+    if (priority === "CRITICAL") {
+      try {
+        const admins = await prisma.adminUser.findMany({
+          select: { userId: true },
+        });
+        await Promise.allSettled(
+          admins.map((a) =>
+            createNotification({
+              receiverId: a.userId,
+              type: "ADMIN",
+              entityType: "REPORT",
+              entityId: report.id,
+              priority: 100,
+              metadata: JSON.stringify({
+                message: `🚨 Critical report submitted: ${reason}`,
+                reportId: report.id,
+              }),
+            })
+          )
+        );
+      } catch (adminNotifErr) {
+        console.error("Error notifying admins for critical report:", adminNotifErr);
+      }
+    }
+
+    return { success: true, reportId: report.id };
+  } catch (error: any) {
+    console.error("submitReport Action server-side error:", error);
+    return { success: false, error: error.message || "Database write error occurred." };
+  }
 }
 
 // ── Get current user's submitted reports ──────────────────────────────────────

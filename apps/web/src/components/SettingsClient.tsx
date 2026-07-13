@@ -14,6 +14,7 @@ import {
   updateNotificationPreference,
   updateMessagingPrivacySettings,
 } from "@/server/actions/settings";
+import { updateMentionPrivacy } from "@/server/actions/mentions";
 
 type Tab = "account" | "privacy" | "security" | "notifications" | "appearance";
 
@@ -36,6 +37,7 @@ export default function SettingsClient({
   const [showLastSeen, setShowLastSeen] = useState(initialSettings?.showLastSeen ?? "EVERYONE");
   const [showReadReceipts, setShowReadReceipts] = useState(initialSettings?.showReadReceipts ?? true);
   const [showTypingIndicator, setShowTypingIndicator] = useState(initialSettings?.showTypingIndicator ?? true);
+  const [mentionPrivacy, setMentionPrivacy] = useState<"EVERYONE" | "FOLLOWING" | "NOBODY">(initialSettings?.profile?.mentionPrivacy ?? "EVERYONE");
 
   // Appearance
   const [theme, setTheme] = useState(initialSettings?.appearanceSetting?.theme ?? "SYSTEM");
@@ -398,6 +400,54 @@ export default function SettingsClient({
 
                 </div>
               </div>
+
+              {/* Mention Privacy Settings */}
+              <div className="border-t border-zinc-800/80 pt-6 mt-6 space-y-6">
+                <div>
+                  <h3 className="text-md font-bold text-zinc-200">Mentions & Tagging</h3>
+                  <p className="text-xs text-zinc-500 mt-1">Control who can tag or mention you in posts, comments, and stories.</p>
+                </div>
+
+                <div className="glass border border-zinc-800 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-200">Who can @mention you</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Select who is allowed to mention your username.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {([
+                      { val: "EVERYONE", label: "Everyone", desc: "Anyone can tag you" },
+                      { val: "FOLLOWING", label: "People You Follow", desc: "Only users you follow" },
+                      { val: "NOBODY", label: "Nobody", desc: "Disable all mentions" },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.val}
+                        onClick={() => {
+                          setMentionPrivacy(opt.val);
+                          startTransition(async () => {
+                            const res = await updateMentionPrivacy(opt.val);
+                            if (res.success) {
+                              showMsg("Mention privacy updated successfully!");
+                            } else {
+                              showMsg(res.error || "Failed to update mention privacy", "error");
+                            }
+                          });
+                        }}
+                        className={`text-left p-4 rounded-xl border transition-all ${
+                          mentionPrivacy === opt.val
+                            ? "border-violet-500 bg-violet-500/5 text-violet-300"
+                            : "border-zinc-800 hover:border-zinc-700 bg-zinc-950/40 text-zinc-400"
+                        }`}
+                      >
+                        <p className="text-sm font-bold">{opt.label}</p>
+                        <p className="text-[10px] text-zinc-500 mt-1">{opt.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 

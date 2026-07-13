@@ -23,6 +23,11 @@ model User {
   verifiedBadge         Boolean                @default(false)
   twoFactorEnabled      Boolean                @default(false)
   twoFactorSecret       String?
+  showOnlineStatus      String                 @default("EVERYONE") // EVERYONE, FRIENDS, NOBODY
+  showLastSeen          String                 @default("EVERYONE") // EVERYONE, FRIENDS, NOBODY
+  showReadReceipts      Boolean                @default(true)
+  showTypingIndicator   Boolean                @default(true)
+  lastSeenAt            DateTime?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -45,6 +50,9 @@ model User {
   bookmarks             Bookmark[]
   notificationSender    Notification[]         @relation("NotificationSender")
   notificationReceiver  Notification[]         @relation("NotificationReceiver")
+  mentionsReceived      Mention[]              @relation("UserMentionsReceived")
+  mentionsSent          Mention[]              @relation("UserMentionsSent")
+  imageTags             ImageTag[]
 
   // Follows
   followers             Follow[]               @relation("Followee")
@@ -66,7 +74,13 @@ model User {
 
   // Feedback & Reports
   reports               Report[]               @relation("Reporter")
+  reportedReports       Report[]               @relation("ReportedUser")
+  assignedReports       Report[]               @relation("AssignedModerator")
   moderatorFlags        ModerationQueue[]      @relation("Moderator")
+  reportActions         ReportAction[]
+  violations            UserViolation[]        @relation("ViolationUser")
+  appeals               Appeal[]               @relation("AppealUser")
+  reviewedAppeals       Appeal[]               @relation("AppealReviewer")
   votes                 PollVote[]
 
   // Feed personalization
@@ -81,13 +95,6 @@ model User {
   // Preferences
   notificationPrefs     NotificationPreference[]
   appearanceSetting     AppearanceSetting?
-  
-  // Presence & Chat Privacy Settings
-  lastActiveAt           DateTime               @default(now())
-  onlineStatusPrivacy    String                 @default("EVERYONE") // EVERYONE, FOLLOWERS, NOBODY
-  lastSeenPrivacy        String                 @default("EVERYONE") // EVERYONE, FOLLOWERS, NOBODY
-  readReceiptsEnabled    Boolean                @default(true)
-  typingIndicatorEnabled Boolean                @default(true)
 
   // Highlights
   storyHighlights       StoryHighlight[]
@@ -114,6 +121,7 @@ model Profile {
   location          String?
   relationshipStatus String?
   privacyLevel      String   @default("PUBLIC") // PUBLIC, FRIENDS, PRIVATE
+  mentionPrivacy    String   @default("EVERYONE") // EVERYONE, FOLLOWING, NOBODY
   // JSON fields stored as String for SQLite
   education         String   @default("[]")   // JSON: [{school, degree, year}]
   work              String   @default("[]")   // JSON: [{company, role, year}]
@@ -271,6 +279,8 @@ model Post {
   bookmarks    Bookmark[]
   hashtags     PostHashtag[]
   poll         Poll?
+  mentions     Mention[]
+  imageTags    ImageTag[]
   reports      Report[]
   views        PostView[]
   hiddenBy     FeedHide[]
@@ -318,6 +328,7 @@ model Story {
   views       StoryView[]
   reactions   StoryReaction[]
   highlights  HighlightStory[]
+  mentions    Mention[]
 }
 
 model StoryView {
@@ -399,6 +410,7 @@ model Comment {
   updatedAt DateTime   @updatedAt
   reactions Reaction[]
   reports   CommentReport[]
+  mentions  Mention[]
 }
 
 model CommentReport {
@@ -476,6 +488,7 @@ model Message {
   reactions      String       @default("[]") // JSON [{userId, emoji}]
   createdAt      DateTime     @default(now())
   readBy         String       @default("[]") // JSON string list of userIds who read it
+  deliveredTo    String       @default("[]") // JSON string list of userIds who received it on device
 }
 
 // ─────────────────────────────────────────────
@@ -587,8 +600,10 @@ model Notification {
   isRead     Boolean  @default(false)
   priority   Int      @default(0)  // higher = more important
   groupKey   String?  // for batching similar notifications (e.g. "post:xxx:reactions")
+  metadata   String?  // JSON string storing extra info like reactionType, commentText, relatedPostId, etc.
   createdAt  DateTime @default(now())
 }
+
 
 // ─────────────────────────────────────────────
 // Bookmarks & Saved Collections
@@ -619,7 +634,7 @@ model BookmarkCollection {
 }
 
 // ─────────────────────────────────────────────
-// Bookmarks & Saved Collections
+// Hashtags
 // ─────────────────────────────────────────────
 
 model Hashtag {
@@ -674,16 +689,119 @@ model PollVote {
 // ─────────────────────────────────────────────
 
 model Report {
+  id                   String         @id @default(uuid())
+  // Who reported
+  reporterId           String
+  reporter             User           @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  // Who is reported
+  reportedUserId       String?
+  reportedUser         User?          @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  // Polymorphic content reference
+  contentType          String         // POST | COMMENT | MESSAGE | USER | STORY | REEL | IMAGE | VIDEO
+  contentId            String         // ID of the reported content
+  // Legacy post relation (kept for backward compat)
+  postId               String?
+  post                 Post?          @relation(fields: [postId], references: [id], onDelete: SetNull)
+  // Report details
+  category             String         @default("OTHER")  // SAFETY | ABUSE | SPAM | FRAUD | SEXUAL | IP | OTHER
+  reason               String         // specific reason within category
+  details              String?        // free-text description
+  attachments          String         @default("[]")    // JSON: [{url, type}]
+  // Workflow
+  status               String         @default("PENDING") // PENDING | UNDER_REVIEW | RESOLVED | IGNORED | APPEALED
+  priority             String         @default("MEDIUM")  // LOW | MEDIUM | HIGH | CRITICAL
+  assignedModeratorId  String?
+  assignedModerator    User?          @relation("AssignedModerator", fields: [assignedModeratorId], references: [id], onDelete: SetNull)
+  resolvedAt           DateTime?
+  // AI moderation fields (for future AI integration)
+  aiScore              Float?
+  aiCategory           String?
+  aiResult             String?
+  aiConfidence         Float?
+  // Timestamps
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  // Relations
+  actions              ReportAction[]
+  violations           UserViolation[]
+
+  @@index([status, priority, createdAt])
+  @@index([contentType, contentId])
+  @@index([reportedUserId, createdAt])
+  @@index([reporterId, createdAt])
+}
+
+model ReportAction {
   id         String   @id @default(uuid())
-  reporterId String
-  reporter   User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  postId     String?
-  post       Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reason     String
-  details    String?  // free-text from reporter
-  status     String   @default("PENDING") // PENDING, RESOLVED, IGNORED
-  priority   Int      @default(1)         // auto-raised on repeated reports
+  reportId   String
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  actionType String   // ASSIGNED | DISMISSED | CONTENT_DELETED | CONTENT_HIDDEN | CONTENT_RESTORED | USER_WARNED | USER_RESTRICTED | USER_SUSPENDED | USER_BANNED | APPEAL_APPROVED | APPEAL_REJECTED | NOTE_ADDED
+  reason     String?
+  notes      String?
+  metadata   String   @default("{}")
   createdAt  DateTime @default(now())
+
+  @@index([reportId, createdAt])
+  @@index([adminId, createdAt])
+}
+
+model UserViolation {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation("ViolationUser", fields: [userId], references: [id], onDelete: Cascade)
+  reportId      String?
+  report        Report?   @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  violationType String    // SPAM | HATE_SPEECH | HARASSMENT | VIOLENCE | FRAUD | SEXUAL | COPYRIGHT | OTHER
+  severity      String    @default("LOW")    // LOW | MEDIUM | HIGH | CRITICAL
+  strikeNumber  Int       @default(1)         // cumulative strike count at time of violation
+  actionTaken   String    // WARNING | FEATURE_RESTRICT | TEMP_SUSPEND | PERM_BAN
+  expiresAt     DateTime?  // for temp suspensions
+  isActive      Boolean   @default(true)
+  issuedBy      String?    // admin user ID
+  contentType   String?    // POST | COMMENT | REPLY | BIO | USERNAME
+  contentId     String?
+  matchedWords  String?    // comma-separated list of matches
+  createdAt     DateTime  @default(now())
+  appeal        Appeal?
+
+  @@index([userId, createdAt])
+  @@index([isActive, userId])
+}
+
+model BlockedWord {
+  id        String   @id @default(uuid())
+  word      String   @unique
+  language  String   // "ar" | "en"
+  category  String   // "INSULT" | "PROFANITY" | "SEXUAL" | "HATE" | "HARASSMENT" | "SPAM"
+  severity  String   // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([word])
+}
+
+
+model Appeal {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation("AppealUser", fields: [userId], references: [id], onDelete: Cascade)
+  violationId   String        @unique
+  violation     UserViolation @relation(fields: [violationId], references: [id], onDelete: Cascade)
+  reason        String
+  explanation   String
+  status        String        @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewedBy    String?
+  reviewer      User?         @relation("AppealReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewNote    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, status])
 }
 
 model ModerationQueue {
@@ -818,12 +936,12 @@ model AdminUser {
 
 model AdminAuditLog {
   id         String   @id @default(uuid())
-  adminId    String   // acting admin's userId
-  action     String   // e.g. "BAN_USER", "DELETE_POST", "CHANGE_SETTING"
-  targetType String?  // "User", "Post", "Report", "Setting"
+  adminId    String
+  action     String
+  targetType String?
   targetId   String?
-  oldValue   String?  // JSON
-  newValue   String?  // JSON
+  oldValue   String?
+  newValue   String?
   createdAt  DateTime @default(now())
 
   @@index([adminId, createdAt])
@@ -836,7 +954,7 @@ model AdminAuditLog {
 
 model PlatformStat {
   id        String   @id @default(uuid())
-  key       String   @unique // "total_users", "total_posts", "total_comments", etc.
+  key       String   @unique
   value     Float    @default(0)
   updatedAt DateTime @updatedAt
 }
@@ -848,8 +966,8 @@ model PlatformStat {
 model PlatformSetting {
   id        String   @id @default(uuid())
   key       String   @unique
-  value     String   // JSON-serialized
-  updatedBy String?  // adminUserId
+  value     String
+  updatedBy String?
   updatedAt DateTime @updatedAt
 }
 
@@ -862,7 +980,7 @@ model SupportTicket {
   userId     String
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject    String
-  status     String          @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  status     String          @default("OPEN")
   assignedTo String?
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
@@ -889,13 +1007,13 @@ model AdCampaign {
   id             String   @id @default(uuid())
   ownerId        String
   title          String
-  creative       String?  // URL to ad creative asset
-  targetAudience String   @default("{}") // JSON
+  creative       String?
+  targetAudience String   @default("{}")
   budget         Float
   spent          Float    @default(0)
   startDate      DateTime
   endDate        DateTime
-  status         String   @default("PENDING") // PENDING, ACTIVE, PAUSED, REJECTED, COMPLETED
+  status         String   @default("PENDING")
   rejectedReason String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -911,11 +1029,11 @@ model MassNotification {
   id          String    @id @default(uuid())
   title       String
   body        String
-  target      String    @default("ALL") // ALL, VERIFIED, INACTIVE_30
-  sentBy      String    // adminUserId
+  target      String    @default("ALL")
+  sentBy      String
   scheduledAt DateTime?
   sentAt      DateTime?
-  status      String    @default("SCHEDULED") // SCHEDULED, SENT, FAILED
+  status      String    @default("SCHEDULED")
   reachCount  Int       @default(0)
   createdAt   DateTime  @default(now())
 
@@ -930,6 +1048,46 @@ model BlockedIP {
   id        String   @id @default(uuid())
   ip        String   @unique
   reason    String?
-  addedBy   String   // adminUserId
+  addedBy   String
   createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// Mention System Models
+// ─────────────────────────────────────────────
+
+model Mention {
+  id            String    @id @default(uuid())
+  mentionedId   String
+  mentioned     User      @relation("UserMentionsReceived", fields: [mentionedId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User      @relation("UserMentionsSent", fields: [authorId], references: [id], onDelete: Cascade)
+  postId        String?
+  post          Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId     String?
+  comment       Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  storyId       String?
+  story         Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+
+  @@index([mentionedId])
+  @@index([authorId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([storyId])
+}
+
+model ImageTag {
+  id            String    @id @default(uuid())
+  postId        String
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  x             Float     // percentage X (0-100)
+  y             Float     // percentage Y (0-100)
+  createdAt     DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
 }

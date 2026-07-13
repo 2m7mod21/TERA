@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useTransition, useCallback } from "react";
+import React, { useState, useTransition, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   ShieldAlert, CheckCircle, Trash2, Ban, Eye, Search, Filter,
   ChevronDown, RotateCcw, Flag, AlertTriangle, Clock, Users,
@@ -52,8 +53,9 @@ function ActionModal({
   title, onConfirm, onClose, requireReason = true,
 }: { title: string; onConfirm: (reason: string) => void; onClose: () => void; requireReason?: boolean }) {
   const [reason, setReason] = useState("");
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
         <h3 className="font-bold text-white">{title}</h3>
         {requireReason && (
@@ -62,6 +64,7 @@ function ActionModal({
             onChange={(e) => setReason(e.target.value)}
             placeholder="Enter reason / notes (required)..."
             rows={3}
+            autoFocus
             className="w-full bg-zinc-900 border border-zinc-800 focus:border-violet-500 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 outline-none resize-none"
           />
         )}
@@ -78,13 +81,16 @@ function ActionModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 // ── Row actions popover ───────────────────────────────────────────────────────
 function ReportRow({ report, onRefresh }: { report: any; onRefresh: () => void }) {
   const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const [modal, setModal] = useState<{ type: string; title: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -132,7 +138,13 @@ function ReportRow({ report, onRefresh }: { report: any; onRefresh: () => void }
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             <Icon className="w-3.5 h-3.5 text-zinc-500" />
-            <span className="text-xs text-zinc-300">{report.contentType}</span>
+            {(report.contentType === "POST" || report.postId) ? (
+              <a href={`/post/${report.postId ?? report.contentId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:underline">
+                View POST
+              </a>
+            ) : (
+              <span className="text-xs text-zinc-300">{report.contentType}</span>
+            )}
           </div>
         </td>
         <td className="px-4 py-3">
@@ -172,51 +184,68 @@ function ReportRow({ report, onRefresh }: { report: any; onRefresh: () => void }
         </td>
         <td className="px-4 py-3 relative">
           <button
-            onClick={() => setOpen(!open)}
+            ref={btnRef}
+            onClick={() => {
+              if (btnRef.current) setMenuRect(btnRef.current.getBoundingClientRect());
+              setOpen(!open);
+            }}
             className="p-1.5 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-700 transition-all"
           >
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
-          {open && (
-            <div className="absolute right-4 top-10 z-50 w-52 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1.5 text-left">
-              <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">Report Actions</div>
-              <button onClick={() => { setOpen(false); setModal({ type: "RESOLVE", title: "Resolve this report?" }); }} className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 flex items-center gap-2">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Mark Resolved
-              </button>
-              <button onClick={() => { setOpen(false); setModal({ type: "IGNORE", title: "Dismiss this report?" }); }} className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 flex items-center gap-2">
-                <RotateCcw className="w-3.5 h-3.5 text-zinc-400" /> Dismiss / Ignore
-              </button>
-              {(report.postId || report.contentType === "POST") && (
-                <>
-                  <div className="my-1 border-t border-zinc-800" />
-                  <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">Content</div>
-                  <button onClick={() => { setOpen(false); setModal({ type: "DELETE_CONTENT", title: "Delete this content?" }); }} className="w-full px-3 py-2 text-xs text-rose-400 hover:bg-zinc-800 flex items-center gap-2">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete Content
-                  </button>
-                  <button onClick={() => { setOpen(false); setModal({ type: "HIDE_CONTENT", title: "Hide this content?" }); }} className="w-full px-3 py-2 text-xs text-orange-400 hover:bg-zinc-800 flex items-center gap-2">
-                    <EyeOff className="w-3.5 h-3.5" /> Hide Content
-                  </button>
-                </>
-              )}
-              {report.reportedUserId && (
-                <>
-                  <div className="my-1 border-t border-zinc-800" />
-                  <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">User Actions</div>
-                  <button onClick={() => { setOpen(false); setModal({ type: "WARN_USER", title: "Send warning to user?" }); }} className="w-full px-3 py-2 text-xs text-yellow-400 hover:bg-zinc-800 flex items-center gap-2">
-                    <AlertTriangle className="w-3.5 h-3.5" /> Warn User
-                  </button>
-                  <button onClick={() => { setOpen(false); setModal({ type: "RESTRICT_USER", title: "Restrict user features?" }); }} className="w-full px-3 py-2 text-xs text-orange-400 hover:bg-zinc-800 flex items-center gap-2">
-                    <UserX className="w-3.5 h-3.5" /> Restrict Account
-                  </button>
-                  <button onClick={() => { setOpen(false); setModal({ type: "SUSPEND_USER", title: "Suspend user for 72 hours?" }); }} className="w-full px-3 py-2 text-xs text-red-400 hover:bg-zinc-800 flex items-center gap-2">
-                    <Ban className="w-3.5 h-3.5" /> Suspend (72h)
-                  </button>
-                  <button onClick={() => { setOpen(false); setModal({ type: "BAN_USER", title: "⚠️ Permanently ban this user?" }); }} className="w-full px-3 py-2 text-xs text-red-500 hover:bg-zinc-800 flex items-center gap-2">
-                    <Ban className="w-3.5 h-3.5" /> Permanent Ban
-                  </button>
-                </>
-              )}
-            </div>
+          
+          {open && menuRect && typeof document !== 'undefined' && createPortal(
+            <>
+              <div className="fixed inset-0 z-[110]" onClick={() => setOpen(false)} />
+              <div
+                style={{
+                  position: 'fixed',
+                  top: menuRect.bottom + 4,
+                  left: menuRect.right - 208, // 52rem width ≈ 208px
+                  zIndex: 111,
+                }}
+                className="w-52 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1.5 text-left overflow-hidden animate-fade-in"
+              >
+                <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">Report Actions</div>
+                <button onClick={() => { setOpen(false); setModal({ type: "RESOLVE", title: "Resolve this report?" }); }} className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Mark Resolved
+                </button>
+                <button onClick={() => { setOpen(false); setModal({ type: "IGNORE", title: "Dismiss this report?" }); }} className="w-full px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800 flex items-center gap-2">
+                  <RotateCcw className="w-3.5 h-3.5 text-zinc-400" /> Dismiss / Ignore
+                </button>
+                {(report.postId || report.contentType === "POST") && (
+                  <>
+                    <div className="my-1 border-t border-zinc-800" />
+                    <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">Content</div>
+                    <button onClick={() => { setOpen(false); setModal({ type: "DELETE_CONTENT", title: "Delete this content?" }); }} className="w-full px-3 py-2 text-xs text-rose-400 hover:bg-zinc-800 flex items-center gap-2">
+                      <Trash2 className="w-3.5 h-3.5" /> Delete Content
+                    </button>
+                    <button onClick={() => { setOpen(false); setModal({ type: "HIDE_CONTENT", title: "Hide this content?" }); }} className="w-full px-3 py-2 text-xs text-orange-400 hover:bg-zinc-800 flex items-center gap-2">
+                      <EyeOff className="w-3.5 h-3.5" /> Hide Content
+                    </button>
+                  </>
+                )}
+                {report.reportedUserId && (
+                  <>
+                    <div className="my-1 border-t border-zinc-800" />
+                    <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-zinc-600">User Actions</div>
+                    <button onClick={() => { setOpen(false); setModal({ type: "WARN_USER", title: "Send warning to user?" }); }} className="w-full px-3 py-2 text-xs text-yellow-400 hover:bg-zinc-800 flex items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Warn User
+                    </button>
+                    <button onClick={() => { setOpen(false); setModal({ type: "RESTRICT_USER", title: "Restrict user features?" }); }} className="w-full px-3 py-2 text-xs text-orange-400 hover:bg-zinc-800 flex items-center gap-2">
+                      <UserX className="w-3.5 h-3.5" /> Restrict Account
+                    </button>
+                    <button onClick={() => { setOpen(false); setModal({ type: "SUSPEND_USER", title: "Suspend user for 72 hours?" }); }} className="w-full px-3 py-2 text-xs text-red-400 hover:bg-zinc-800 flex items-center gap-2">
+                      <Ban className="w-3.5 h-3.5" /> Suspend (72h)
+                    </button>
+                    <button onClick={() => { setOpen(false); setModal({ type: "BAN_USER", title: "⚠️ Permanently ban this user?" }); }} className="w-full px-3 py-2 text-xs text-red-500 hover:bg-zinc-800 flex items-center gap-2">
+                      <Ban className="w-3.5 h-3.5" /> Permanent Ban
+                    </button>
+                  </>
+                )}
+              </div>
+            </>,
+            document.body
           )}
         </td>
       </tr>

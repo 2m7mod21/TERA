@@ -4,6 +4,9 @@ import { auth } from "@/server/auth/config";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
+import { ModerationService } from "@/services/moderation";
+import { logViolationAction } from "./moderation";
+
 // ─── Update basic profile fields ─────────────────────────────────────────────
 export async function updateProfile(data: {
   displayName?: string;
@@ -18,11 +21,79 @@ export async function updateProfile(data: {
   if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
   try {
+    const modSetting = await prisma.platformSetting.findUnique({
+      where: { key: "moderation_action" }
+    });
+    const moderationAction = modSetting?.value || "BLOCK";
+
+    let cleanBio = data.bio;
+    let cleanDisplayName = data.displayName;
+    let bioViolation = null;
+    let nameViolation = null;
+
+    if (data.bio) {
+      const bioResult = await ModerationService.checkText(data.bio);
+      if (!bioResult.allowed) {
+        if (moderationAction === "BLOCK") {
+          await logViolationAction(session.user.id, {
+            contentType: "BIO",
+            violationType: bioResult.reason || "PROFANITY",
+            severity: bioResult.severity || "LOW",
+            matchedWords: bioResult.matchedWords,
+          });
+          return { success: false, error: "Bio contains prohibited words." };
+        } else if (moderationAction === "REPLACE") {
+          cleanBio = bioResult.cleanText;
+          data.bio = cleanBio;
+        }
+        bioViolation = bioResult;
+      }
+    }
+
+    if (data.displayName) {
+      const nameResult = await ModerationService.checkText(data.displayName);
+      if (!nameResult.allowed) {
+        if (moderationAction === "BLOCK") {
+          await logViolationAction(session.user.id, {
+            contentType: "USERNAME",
+            violationType: nameResult.reason || "PROFANITY",
+            severity: nameResult.severity || "LOW",
+            matchedWords: nameResult.matchedWords,
+          });
+          return { success: false, error: "Display name contains prohibited words." };
+        } else if (moderationAction === "REPLACE") {
+          cleanDisplayName = nameResult.cleanText;
+          data.displayName = cleanDisplayName;
+        }
+        nameViolation = nameResult;
+      }
+    }
+
     await prisma.profile.update({ where: { userId: session.user.id }, data });
+
+    if (bioViolation) {
+      await logViolationAction(session.user.id, {
+        contentType: "BIO",
+        violationType: bioViolation.reason || "PROFANITY",
+        severity: bioViolation.severity || "LOW",
+        matchedWords: bioViolation.matchedWords,
+      });
+    }
+
+    if (nameViolation) {
+      await logViolationAction(session.user.id, {
+        contentType: "USERNAME",
+        violationType: nameViolation.reason || "PROFANITY",
+        severity: nameViolation.severity || "LOW",
+        matchedWords: nameViolation.matchedWords,
+      });
+    }
+
     const profile = await prisma.profile.findUnique({ where: { userId: session.user.id } });
     revalidatePath(`/${profile?.username}`);
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error("Update profile Action error:", error);
     return { success: false, error: "Failed to update profile" };
   }
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { getFeedPosts } from "@/server/actions/feed";
 import { PostCard } from "@/components/HomeFeed";
@@ -48,17 +49,12 @@ export default function PostPageClient({
 
   const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleUrlChange = () => {
-      const params = new URLSearchParams(window.location.search);
-      const commentsId = params.get("comments");
-      setOpenCommentsPostId(commentsId);
-    };
+  const searchParams = useSearchParams();
+  const commentsQueryId = searchParams.get("comments");
 
-    handleUrlChange();
-    window.addEventListener("popstate", handleUrlChange);
-    return () => window.removeEventListener("popstate", handleUrlChange);
-  }, []);
+  useEffect(() => {
+    setOpenCommentsPostId(commentsQueryId);
+  }, [commentsQueryId]);
 
   const handleOpenComments = (postId: string) => {
     setOpenCommentsPostId(postId);

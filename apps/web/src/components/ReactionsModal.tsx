@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Loader2, UserPlus, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { getPostReactors } from "@/server/actions/posts";
@@ -77,7 +77,7 @@ export default function ReactionsModal({ postId, onClose }: ReactionsModalProps)
       res.reactors.forEach((r) => {
         newMap[r.id] = r.isFollowing;
       });
-      setFollowingMap((prev) => ({ ...prev, ...newMap }));
+      setFollowingMap((prev) => ({ ...prev, ...newMap } as Record<string, boolean>));
     }
 
     setLoading(false);
@@ -87,13 +87,13 @@ export default function ReactionsModal({ postId, onClose }: ReactionsModalProps)
   const handleFollowToggle = async (userId: string) => {
     const currentlyFollowing = followingMap[userId];
     // Optimistic toggle
-    setFollowingMap((prev) => ({ ...prev, [userId]: !currentlyFollowing }));
+    setFollowingMap((prev) => ({ ...prev, [userId]: !currentlyFollowing } as Record<string, boolean>));
     playSound(currentlyFollowing ? "remove" : "reaction");
 
     const res = currentlyFollowing ? await unfollowUser(userId) : await followUser(userId);
     if (!res.success) {
       // rollback
-      setFollowingMap((prev) => ({ ...prev, [userId]: currentlyFollowing }));
+      setFollowingMap((prev) => ({ ...prev, [userId]: currentlyFollowing } as Record<string, boolean>));
     }
   };
 
@@ -127,7 +127,7 @@ export default function ReactionsModal({ postId, onClose }: ReactionsModalProps)
             <button
               key={tab.id}
               onClick={() => {
-                playSound("click");
+                playSound("pop");
                 setActiveTab(tab.id);
               }}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all shrink-0 ${

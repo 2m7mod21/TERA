@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { X, Loader2, Heart, Share2, MessageSquare, Send } from "lucide-react";
+import { X, Loader2, Send, ShieldAlert } from "lucide-react";
 import { getPostById } from "@/server/actions/posts";
 import { playSound } from "@/lib/sounds";
 import { CommentItem } from "@/components/HomeFeed";
+import MentionTextarea from "@/components/MentionTextarea";
 
 
 interface CommentModalProps {
@@ -26,14 +27,13 @@ export default function CommentModal({
   const [loadingComments, setLoadingComments] = useState(true);
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [scrollYSnapshot, setScrollYSnapshot] = useState(0);
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
   // Preserve scroll position and capture Escape key
   useEffect(() => {
     const originalScrollY = window.scrollY;
-    setScrollYSnapshot(originalScrollY);
 
     // Prevent body scrolling
     const origBodyStyle = document.body.style.overflow;
@@ -88,12 +88,33 @@ export default function CommentModal({
     loadComments();
   }, [postId, post]);
 
+  // Scroll to and highlight specific comment if parameter present
+  useEffect(() => {
+    if (loadingComments || comments.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const highlightId = params.get("highlightComment");
+    if (highlightId) {
+      setTimeout(() => {
+        const element = document.getElementById(`comment-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.classList.add("ring-2", "ring-violet-500", "p-2", "bg-violet-500/10", "rounded-2xl", "transition-all", "duration-1000");
+          setTimeout(() => {
+             element.classList.remove("ring-2", "ring-violet-500", "bg-violet-500/10");
+          }, 3000);
+        }
+      }, 400);
+    }
+  }, [loadingComments, comments]);
+
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim() || submittingComment) return;
 
     const text = commentText;
     setCommentText("");
+    setCommentError(null);
     setSubmittingComment(true);
     playSound("comment");
 
@@ -111,6 +132,13 @@ export default function CommentModal({
       setTimeout(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
+    } else if (!res.success) {
+      // Restore the text so the user can edit it
+      setCommentText(text);
+      const errMsg = typeof res.error === "object" && res.error !== null
+        ? (res.error as any).global
+        : typeof res.error === "string" ? res.error : null;
+      setCommentError(errMsg || "Failed to send comment.");
     }
     setSubmittingComment(false);
   };
@@ -206,7 +234,7 @@ export default function CommentModal({
               <p className="text-center text-xs text-zinc-500 py-10">No comments yet. Start the conversation!</p>
             ) : (
               comments.map((comment: any) => (
-                <div key={comment.id} className="mt-2 text-left">
+                <div key={comment.id} id={`comment-${comment.id}`} className="mt-2 text-left transition-all duration-500">
                   <CommentItem
                     comment={comment}
                     currentUserId={currentUserId}
@@ -220,23 +248,38 @@ export default function CommentModal({
 
           {/* Interactive footer comment box */}
           <div className="p-4 border-t border-zinc-800/60 bg-zinc-900/50">
-            <form onSubmit={handleCommentSubmit} className="flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Write a comment..."
-                className="flex-1 bg-zinc-950 border border-zinc-800 focus:border-violet-500 rounded-2xl px-4 py-2 text-xs text-zinc-100 outline-none transition-all"
-              />
+            {/* Moderation error display */}
+            {commentError && (
+              <div className="flex items-start gap-2 mb-2.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <p className="flex-1 leading-snug">{commentError}</p>
+                <button onClick={() => setCommentError(null)} className="text-red-500 hover:text-red-300">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            <form onSubmit={handleCommentSubmit} className="flex gap-2 items-end">
+              <div className="flex-1">
+                <MentionTextarea
+                  value={commentText}
+                  onChange={setCommentText}
+                  placeholder="Write a comment... (use @ to mention)"
+                  rows={1}
+                  id="comment-modal-input"
+                  dropdownPosition="top"
+                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-violet-500 rounded-2xl px-4 py-2 text-xs text-zinc-100 outline-none transition-all resize-none"
+                />
+              </div>
               <button
                 type="submit"
                 disabled={!commentText.trim() || submittingComment}
-                className="gradient-btn px-4 py-2 rounded-xl text-white text-xs font-semibold disabled:opacity-40"
+                className="gradient-btn px-4 py-2 rounded-xl text-white text-xs font-semibold disabled:opacity-40 flex-shrink-0"
               >
                 {submittingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </form>
           </div>
+
         </div>
       </div>
     </div>

@@ -50,6 +50,9 @@ model User {
   bookmarks             Bookmark[]
   notificationSender    Notification[]         @relation("NotificationSender")
   notificationReceiver  Notification[]         @relation("NotificationReceiver")
+  mentionsReceived      Mention[]              @relation("UserMentionsReceived")
+  mentionsSent          Mention[]              @relation("UserMentionsSent")
+  imageTags             ImageTag[]
 
   // Follows
   followers             Follow[]               @relation("Followee")
@@ -118,6 +121,7 @@ model Profile {
   location          String?
   relationshipStatus String?
   privacyLevel      String   @default("PUBLIC") // PUBLIC, FRIENDS, PRIVATE
+  mentionPrivacy    String   @default("EVERYONE") // EVERYONE, FOLLOWING, NOBODY
   // JSON fields stored as String for SQLite
   education         String   @default("[]")   // JSON: [{school, degree, year}]
   work              String   @default("[]")   // JSON: [{company, role, year}]
@@ -275,6 +279,8 @@ model Post {
   bookmarks    Bookmark[]
   hashtags     PostHashtag[]
   poll         Poll?
+  mentions     Mention[]
+  imageTags    ImageTag[]
   reports      Report[]
   views        PostView[]
   hiddenBy     FeedHide[]
@@ -322,6 +328,7 @@ model Story {
   views       StoryView[]
   reactions   StoryReaction[]
   highlights  HighlightStory[]
+  mentions    Mention[]
 }
 
 model StoryView {
@@ -403,6 +410,7 @@ model Comment {
   updatedAt DateTime   @updatedAt
   reactions Reaction[]
   reports   CommentReport[]
+  mentions  Mention[]
 }
 
 model CommentReport {
@@ -752,12 +760,29 @@ model UserViolation {
   expiresAt     DateTime?  // for temp suspensions
   isActive      Boolean   @default(true)
   issuedBy      String?    // admin user ID
+  contentType   String?    // POST | COMMENT | REPLY | BIO | USERNAME
+  contentId     String?
+  matchedWords  String?    // comma-separated list of matches
   createdAt     DateTime  @default(now())
   appeal        Appeal?
 
   @@index([userId, createdAt])
   @@index([isActive, userId])
 }
+
+model BlockedWord {
+  id        String   @id @default(uuid())
+  word      String   @unique
+  language  String   // "ar" | "en"
+  category  String   // "INSULT" | "PROFANITY" | "SEXUAL" | "HATE" | "HARASSMENT" | "SPAM"
+  severity  String   // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([word])
+}
+
 
 model Appeal {
   id            String        @id @default(uuid())
@@ -1025,5 +1050,45 @@ model BlockedIP {
   reason    String?
   addedBy   String
   createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// Mention System Models
+// ─────────────────────────────────────────────
+
+model Mention {
+  id            String    @id @default(uuid())
+  mentionedId   String
+  mentioned     User      @relation("UserMentionsReceived", fields: [mentionedId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User      @relation("UserMentionsSent", fields: [authorId], references: [id], onDelete: Cascade)
+  postId        String?
+  post          Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId     String?
+  comment       Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  storyId       String?
+  story         Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+
+  @@index([mentionedId])
+  @@index([authorId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([storyId])
+}
+
+model ImageTag {
+  id            String    @id @default(uuid())
+  postId        String
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  x             Float     // percentage X (0-100)
+  y             Float     // percentage Y (0-100)
+  createdAt     DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
 }
 

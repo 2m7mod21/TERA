@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { Image, Smile, BarChart2, Globe, Users, Lock, X, Loader2, MapPin } from "lucide-react";
+import { Image, Smile, BarChart2, Globe, Users, Lock, X, Loader2, MapPin, ShieldAlert } from "lucide-react";
 import { createPost } from "@/server/actions/posts";
+import MentionTextarea from "@/components/MentionTextarea";
 
 const FEELINGS = ["😄 Happy","😢 Sad","😍 Loved","🎉 Excited","😎 Cool","😤 Frustrated","😴 Tired","🥳 Celebrating"];
-const MOCK_FRIENDS = ["sarah_connor", "john_doe", "alice_wonder", "bob_marley", "neo_matrix", "trinity"];
 const AUDIENCE_OPTIONS = [
   { value: "PUBLIC", label: "Public", icon: Globe, desc: "Anyone" },
   { value: "FRIENDS", label: "Friends", icon: Users, desc: "Followers only" },
@@ -16,6 +16,7 @@ export default function PostComposer({ user }: { user: any }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [moderationError, setModerationError] = useState<string | null>(null);
   const [audience, setAudience] = useState("PUBLIC");
   const [showAudience, setShowAudience] = useState(false);
   const [feeling, setFeeling] = useState("");
@@ -26,8 +27,6 @@ export default function PostComposer({ user }: { user: any }) {
   const [showPoll, setShowPoll] = useState(false);
   const [pollQ, setPollQ] = useState("");
   const [pollOpts, setPollOpts] = useState(["", ""]);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,35 +41,11 @@ export default function PostComposer({ user }: { user: any }) {
 
   const handleContentChange = (val: string) => {
     setContent(val);
-    const cursor = textRef.current?.selectionStart ?? 0;
-    const textBeforeCursor = val.slice(0, cursor);
-    const match = textBeforeCursor.match(/@(\w*)$/);
-    if (match) {
-      setShowMentions(true);
-      setMentionQuery(match[1] || "");
-    } else {
-      setShowMentions(false);
-    }
-  };
-
-  const selectMention = (username: string) => {
-    const cursor = textRef.current?.selectionStart ?? 0;
-    const textBeforeCursor = content.slice(0, cursor);
-    const textAfterCursor = content.slice(cursor);
-    const newTextBefore = textBeforeCursor.replace(/@\w*$/, `@${username} `);
-    setContent(newTextBefore + textAfterCursor);
-    setShowMentions(false);
-    setTimeout(() => {
-      if (textRef.current) {
-        textRef.current.focus();
-        const newCursorPos = newTextBefore.length;
-        textRef.current.setSelectionRange(newCursorPos, newCursorPos);
-      }
-    }, 50);
   };
 
   const handlePost = async () => {
     if (!content.trim() && mediaFiles.length === 0) return;
+    setModerationError(null);
     setLoading(true);
     const hasVideo = mediaFiles.some(url => url.match(/\.(mp4|webm|ogg|mov)$/i) || url.includes("video"));
     const postType = hasVideo ? "VIDEO" : mediaFiles.length > 0 ? "IMAGE" : "TEXT";
@@ -100,6 +75,11 @@ export default function PostComposer({ user }: { user: any }) {
       setExpanded(false);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+    } else if (!res.success) {
+      const errMsg = typeof res.error === "object" && res.error !== null
+        ? (res.error as any).global
+        : typeof res.error === "string" ? res.error : null;
+      setModerationError(errMsg || "Failed to create post.");
     }
     setLoading(false);
   };
@@ -189,37 +169,32 @@ export default function PostComposer({ user }: { user: any }) {
               </div>
             )}
 
-            {/* Textarea */}
+            {/* Textarea with Mention Autocomplete */}
             <div className="relative">
-              <textarea
-                ref={textRef}
+              <MentionTextarea
                 value={content}
-                onChange={e => handleContentChange(e.target.value)}
+                onChange={handleContentChange}
+                placeholder={`What's on your mind, ${displayName.split(" ")[0]}?`}
                 rows={expanded ? 4 : 1}
                 maxLength={MAX_CHARS}
-                placeholder={`What's on your mind, ${displayName.split(" ")[0]}?`}
+                id="post-composer-textarea"
                 className="w-full bg-transparent text-zinc-100 placeholder-zinc-500 outline-none resize-none text-[15px] leading-relaxed"
               />
-
-              {/* Mentions autocomplete */}
-              {showMentions && (
-                <div className="absolute z-20 top-full left-0 mt-1 max-h-40 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl p-1 min-w-[200px] fade-in">
-                  {MOCK_FRIENDS.filter(username => username.toLowerCase().includes(mentionQuery.toLowerCase()))
-                    .map((username) => (
-                      <button
-                        key={username}
-                        onClick={() => selectMention(username)}
-                        className="w-full text-left px-3 py-1.5 text-xs text-zinc-200 hover:bg-violet-600 hover:text-white rounded-lg transition-all"
-                      >
-                        @{username}
-                      </button>
-                  ))}
-                  {MOCK_FRIENDS.filter(username => username.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 && (
-                    <div className="px-3 py-1.5 text-xs text-zinc-500">No users found</div>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Moderation error banner */}
+            {moderationError && (
+              <div className="flex items-start gap-2.5 mt-2 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs leading-snug animate-in fade-in slide-in-from-top-1 duration-200">
+                <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400" />
+                <div className="flex-1">
+                  <p className="font-semibold text-red-300 mb-0.5">Content Policy Violation</p>
+                  <p>{moderationError}</p>
+                </div>
+                <button onClick={() => setModerationError(null)} className="text-red-500 hover:text-red-300 mt-0.5">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Media previews */}
             {mediaFiles.length > 0 && (

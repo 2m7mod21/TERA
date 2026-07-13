@@ -3,6 +3,7 @@
 import React, { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toggleReaction } from "@/server/actions/posts";
 import { playSound } from "@/lib/sounds";
@@ -50,6 +51,31 @@ function ClientTime({ date }: { date: Date | string }) {
   }, [date]);
   return <span suppressHydrationWarning>{label}</span>;
 }
+
+// ─── Formatting Mentions and Hashtags ──────────────────────────────────────────
+function formatMentionsAndHashtags(text: string) {
+  if (!text) return "";
+  return text.split(/(\s+)/).map((word: string, i: number) => {
+    if (word.startsWith("#") && word.length > 1) {
+      const cleanTag = word.slice(1).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+      return (
+        <Link key={i} href={`/explore?tag=${cleanTag}`} className="text-violet-400 hover:underline">
+          {word}
+        </Link>
+      );
+    }
+    if (word.startsWith("@") && word.length > 1) {
+      const cleanUsername = word.slice(1).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+      return (
+        <Link key={i} href={`/${cleanUsername}`} className="text-blue-400 hover:underline">
+          {word}
+        </Link>
+      );
+    }
+    return <span key={i}>{word}</span>;
+  });
+}
+
 
 // ─── Threaded Comment ─────────────────────────────────────────────────────────
 export function CommentItem({
@@ -174,7 +200,7 @@ export function CommentItem({
                   <button type="button" onClick={() => setEditing(false)} className="text-zinc-500 text-xs"><X className="w-3 h-3" /></button>
                 </form>
               ) : (
-                <p className="text-zinc-200">{content}</p>
+                <p className="text-zinc-200 whitespace-pre-wrap">{formatMentionsAndHashtags(content)}</p>
               )}
             </div>
 
@@ -403,6 +429,8 @@ function OverflowMenu({
   onDeleted,
   onEdited,
   onClose,
+  onReportClick,
+  menuRect,
 }: {
   post: any;
   currentUserId: string;
@@ -411,6 +439,7 @@ function OverflowMenu({
   onEdited: (content: string) => void;
   onClose: () => void;
   onReportClick: () => void;
+  menuRect: DOMRect | null;
 }) {
   const isAuthor = post.userId === currentUserId;
   const [editing, setEditing] = useState(false);
@@ -430,6 +459,7 @@ function OverflowMenu({
   };
 
   const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) return;
     const { deletePost } = await import("@/server/actions/posts");
     const res = await deletePost(post.id);
     if (res.success) { onDeleted(); onClose(); }
@@ -448,55 +478,83 @@ function OverflowMenu({
     setTimeout(() => { setLinkCopied(false); onClose(); }, 2000);
   };
 
-  if (editing) {
-    return (
-      <div className="absolute top-full right-0 mt-2 w-72 glass rounded-2xl border border-zinc-700 shadow-2xl z-50 p-3 scale-in">
-        <p className="text-xs font-semibold text-zinc-300 mb-2">Edit post</p>
-        <form onSubmit={handleEditSubmit}>
-          <textarea
-            value={editText}
-            onChange={e => setEditText(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-zinc-100 outline-none resize-none"
-            rows={4}
-            autoFocus
-          />
-          <div className="flex gap-2 mt-2 justify-end">
-            <button type="button" onClick={() => setEditing(false)} className="text-xs text-zinc-400 px-3 py-1.5 rounded-lg hover:bg-zinc-800">Cancel</button>
-            <button type="submit" className="gradient-btn text-xs text-white px-3 py-1.5 rounded-lg">Save</button>
-          </div>
-        </form>
-      </div>
+  if (editing && menuRect && typeof document !== 'undefined') {
+    return createPortal(
+      <>
+        <div className="fixed inset-0 z-[110]" onMouseDown={onClose} />
+        <div
+          style={{
+            position: 'fixed',
+            top: menuRect.bottom + 4,
+            left: Math.max(16, menuRect.right - 288),
+            zIndex: 111,
+          }}
+          className="w-72 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 text-left overflow-hidden scale-in"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <p className="text-xs font-semibold text-zinc-300 mb-2">Edit post</p>
+          <form onSubmit={handleEditSubmit}>
+            <textarea
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-700 focus:border-violet-500 rounded-lg px-2.5 py-2 text-sm text-zinc-100 outline-none resize-none"
+              rows={4}
+              autoFocus
+            />
+            <div className="flex gap-2 mt-2 justify-end">
+              <button type="button" onClick={() => setEditing(false)} className="text-xs text-zinc-400 px-3 py-1.5 rounded-lg hover:bg-zinc-800">Cancel</button>
+              <button type="submit" className="gradient-btn text-xs text-white px-3 py-1.5 rounded-lg">Save</button>
+            </div>
+          </form>
+        </div>
+      </>,
+      document.body
     );
   }
 
-  return (
-    <div className="absolute top-full right-0 mt-2 w-52 glass rounded-2xl border border-zinc-700 shadow-2xl z-50 overflow-hidden scale-in">
-      <button onClick={handleCopy} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors">
-        {linkCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-        {linkCopied ? "Link copied!" : "Copy Link"}
-      </button>
-      {!isAuthor && (
-        <>
-          <button onClick={handleHide} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors">
-            <EyeOff className="w-4 h-4 text-zinc-400" /> Hide Post
-          </button>
-          <button onClick={handleReport} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-rose-400 hover:bg-zinc-800 transition-colors">
-            <Flag className="w-4 h-4" /> Report Post
-          </button>
-        </>
-      )}
-      {isAuthor && (
-        <>
-          <button onClick={() => setEditing(true)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors">
-            <Edit3 className="w-4 h-4 text-violet-400" /> Edit Post
-          </button>
-          <button onClick={handleDelete} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-rose-400 hover:bg-zinc-800 transition-colors">
-            <Trash2 className="w-4 h-4" /> Delete Post
-          </button>
-        </>
-      )}
-    </div>
-  );
+  return menuRect && typeof document !== 'undefined' ? createPortal(
+    <>
+      <div className="fixed inset-0 z-[110]" onMouseDown={onClose} />
+      <div
+        style={{
+          position: 'fixed',
+          top: menuRect.bottom + 4,
+          left: Math.max(16, menuRect.right - 208),
+          zIndex: 111,
+        }}
+        className="w-52 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1 text-left overflow-hidden animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button onClick={handleCopy} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
+          {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
+          {linkCopied ? "Link copied!" : "Copy Link"}
+        </button>
+        {!isAuthor && (
+          <>
+            <button onClick={handleHide} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
+              <EyeOff className="w-3.5 h-3.5 text-zinc-400" /> Hide Post
+            </button>
+            <button onClick={handleReport} className="flex items-center gap-3 w-full px-4 py-2.5 text-[11px] text-rose-400 hover:bg-zinc-800 transition-colors">
+              <Flag className="w-3.5 h-3.5" /> Report Post
+            </button>
+          </>
+        )}
+        {isAuthor && (
+          <>
+            <button onClick={() => setEditing(true)} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
+              <Edit3 className="w-3.5 h-3.5 text-violet-400" /> Edit Post
+            </button>
+            <button onClick={handleDelete} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-rose-400 hover:bg-zinc-800 transition-colors">
+              <Trash2 className="w-3.5 h-3.5" /> Delete Post
+            </button>
+          </>
+        )}
+      </div>
+    </>,
+    document.body
+  ) : null;
 }
 
 export function PostCard({
@@ -516,9 +574,13 @@ export function PostCard({
   const [optimisticReactions, setOptimisticReactions] = useState<any[]>(displayPost.reactions ?? []);
   const [initialComments] = useState<any[]>(displayPost.comments ?? []);
   const [showComments, setShowComments] = useState(false);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(
+    (post.bookmarks?.length > 0) || (displayPost.bookmarks?.length > 0)
+  );
   const [hidden, setHidden] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -629,7 +691,7 @@ export function PostCard({
     const originalState = isReposted;
     const originalCount = sharesCount;
     setIsReposted(!originalState);
-    setSharesCount((prev) => (originalState ? prev - 1 : prev + 1));
+    setSharesCount((prev: number) => (originalState ? prev - 1 : prev + 1));
     const { repostPost, unrepostPost } = await import("@/server/actions/posts");
     const res = originalState ? await unrepostPost(displayPost.id) : await repostPost(displayPost.id);
     if (!res.success) {
@@ -648,7 +710,7 @@ export function PostCard({
     if (res.success) {
       setShowQuoteModal(false);
       setQuoteText("");
-      setSharesCount((prev) => prev + 1);
+      setSharesCount((prev: number) => prev + 1);
     }
     setSubmittingQuote(false);
   };
@@ -702,7 +764,12 @@ export function PostCard({
           </button>
           <div className="relative">
             <button
-              onClick={() => { setShowMenu(v => !v); setShowShare(false); }}
+              ref={menuBtnRef}
+              onClick={() => { 
+                if (menuBtnRef.current) setMenuRect(menuBtnRef.current.getBoundingClientRect());
+                setShowMenu(v => !v); 
+                setShowShare(false); 
+              }}
               className="w-8 h-8 rounded-full hover:bg-zinc-800 flex items-center justify-center transition-all"
             >
               <MoreHorizontal className="w-4 h-4 text-zinc-500" />
@@ -716,6 +783,7 @@ export function PostCard({
                 onEdited={(c) => setEditedContent(c)}
                 onReportClick={() => setReportOpen(true)}
                 onClose={() => setShowMenu(false)}
+                menuRect={menuRect}
               />
             )}
           </div>
@@ -726,13 +794,7 @@ export function PostCard({
       {postContent && (
         <div className="px-4 pb-3">
           <p className={`text-zinc-200 text-[15px] leading-relaxed whitespace-pre-wrap ${!expanded && isLong ? "line-clamp-4" : ""}`}>
-            {postContent.split(/(\s+)/).map((word: string, i: number) =>
-              word.startsWith("#") ? (
-                <Link key={i} href={`/explore?tag=${word.slice(1)}`} className="text-violet-400 hover:underline">{word}</Link>
-              ) : word.startsWith("@") ? (
-                <Link key={i} href={`/${word.slice(1)}`} className="text-blue-400 hover:underline">{word}</Link>
-              ) : <span key={i}>{word}</span>
-            )}
+            {formatMentionsAndHashtags(postContent)}
           </p>
           {isLong && (
             <button onClick={() => setExpanded(v => !v)} className="text-violet-400 text-xs hover:underline mt-1">
@@ -898,7 +960,7 @@ export function PostCard({
       {showRepostMenu && repostMenuRect && typeof document !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
-          <div className="fixed inset-0 z-[9998]" onClick={() => setShowRepostMenu(false)} />
+          <div className="fixed inset-0 z-[9998]" onMouseDown={() => setShowRepostMenu(false)} />
           <div
             style={{
               position: 'fixed',
@@ -908,6 +970,8 @@ export function PostCard({
               zIndex: 9999,
             }}
             className="bg-zinc-900 border border-white/[0.08] shadow-2xl rounded-2xl py-1 w-44 overflow-hidden animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => { setShowRepostMenu(false); handleRepostToggle(); }}
@@ -938,9 +1002,13 @@ export function PostCard({
       {showQuoteModal && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-          onClick={() => setShowQuoteModal(false)}
+          onMouseDown={() => setShowQuoteModal(false)}
         >
-          <div className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-3xl p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div
+            className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-3xl p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h3 className="text-base font-bold text-zinc-100 mb-3">Quote Post</h3>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <textarea
@@ -996,6 +1064,7 @@ export default function HomeFeed({
   trending = [],
   active = [],
   initialStories = [],
+  notifCount = 0,
 }: {
   initialPosts: any[];
   initialCursor: string | null;
@@ -1004,6 +1073,7 @@ export default function HomeFeed({
   trending?: any[];
   active?: any[];
   initialStories?: any[];
+  notifCount?: number;
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -1045,17 +1115,12 @@ export default function HomeFeed({
   const currentUserId = user?.id ?? "";
   const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleUrlChange = () => {
-      const params = new URLSearchParams(window.location.search);
-      const commentsId = params.get("comments");
-      setOpenCommentsPostId(commentsId);
-    };
+  const searchParams = useSearchParams();
+  const commentsQueryId = searchParams.get("comments");
 
-    handleUrlChange();
-    window.addEventListener("popstate", handleUrlChange);
-    return () => window.removeEventListener("popstate", handleUrlChange);
-  }, []);
+  useEffect(() => {
+    setOpenCommentsPostId(commentsQueryId);
+  }, [commentsQueryId]);
 
   const handleOpenComments = (postId: string) => {
     setOpenCommentsPostId(postId);
@@ -1077,7 +1142,7 @@ export default function HomeFeed({
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <TopNav user={user} />
+      <TopNav user={user} notifCount={notifCount} />
 
       <div className="flex max-w-[1280px] mx-auto pt-14">
         {/* ── Left Sidebar ── */}

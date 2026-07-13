@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
   Bell, Heart, MessageCircle, UserPlus, Star,
@@ -108,8 +109,8 @@ export const NOTIF_LABELS: Record<string, string> = {
 };
 
 export const ENTITY_LINKS: Record<string, (id: string) => string> = {
-  POST: (id) => `/posts/${id}`,
-  COMMENT: (id) => `/posts/${id}`,
+  POST: (id) => `/post/${id}`,
+  COMMENT: (id) => `/post/${id}`,
   USER: (id) => `/${id}`,
   STORY: () => "/",
   GROUP: (id) => `/groups/${id}`,
@@ -158,8 +159,17 @@ export function NotificationRow({
     } catch { }
   }
 
-  if (meta.relatedPostId && (n.entityType === "COMMENT_POST" || n.entityType === "COMMENT")) {
-    entityLink = `/post/${meta.relatedPostId}`;
+  const commentId = meta.commentId || (n.entityType === "COMMENT" ? n.entityId : null);
+  const postId = meta.postId || meta.relatedPostId || (n.entityType === "POST" ? n.entityId : null);
+
+  if (commentId && postId) {
+    entityLink = `/post/${postId}?comments=${postId}&highlightComment=${commentId}`;
+  } else if (n.entityType === "COMMENT_POST" || n.entityType === "COMMENT") {
+    if (postId) {
+      entityLink = `/post/${postId}?comments=${postId}`;
+    } else {
+      entityLink = "/";
+    }
   }
 
   let actionLabel = NOTIF_LABELS[n.type] ?? "interacted with you";
@@ -176,7 +186,13 @@ export function NotificationRow({
     contentPreview = meta.commentText;
   }
 
-  const handleClick = () => { if (!n.isRead) onRead(n.id); };
+  const router = useRouter();
+  const handleClick = () => {
+    if (!n.isRead) onRead(n.id);
+    if (entityLink && entityLink !== "#") {
+      router.push(entityLink);
+    }
+  };
 
   return (
     <div

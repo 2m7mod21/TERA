@@ -54,9 +54,48 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
         .then((r: { followeeId: string }[]) => new Set(r.map((f) => f.followeeId)))
     : new Set<string>();
 
+  // Visibility logic: Author can always see their own posts of any visibility. Others can see PUBLIC and FRIENDS.
   const where: any = {
-    visibility: { in: ["PUBLIC", "FRIENDS"] },
-    ...(blockedIds.length > 0 ? { user: { id: { notIn: blockedIds } } } : {}),
+    AND: [
+      {
+        OR: [
+          { visibility: { in: ["PUBLIC", "FRIENDS"] } },
+          ...(session?.user?.id ? [{ userId: session.user.id }] : []),
+        ],
+      },
+      ...(blockedIds.length > 0 ? [{ user: { id: { notIn: blockedIds } } }] : []),
+      // Filter out hidden posts
+      ...(session?.user?.id ? [{
+        hiddenBy: { none: { userId: session.user.id } }
+      }] : []),
+    ],
+  };
+
+  const commonIncludes = {
+    user: { include: { profile: true } },
+    reactions: true,
+    comments: {
+      where: { parentId: null },
+      take: 3,
+      orderBy: { createdAt: "desc" as const },
+      include: { user: { include: { profile: true } } },
+    },
+    poll: { include: { options: { include: { votes: true } } } },
+    _count: { select: { comments: true, reactions: true } },
+    shares: { select: { userId: true, content: true } },
+    bookmarks: session?.user?.id ? {
+      where: { userId: session.user.id },
+      select: { id: true },
+    } : undefined,
+    parentPost: {
+      include: {
+        user: { include: { profile: true } },
+        reactions: true,
+        poll: { include: { options: { include: { votes: true } } } },
+        shares: { select: { userId: true, content: true } },
+        _count: { select: { comments: true, reactions: true } },
+      }
+    },
   };
 
   if (feedType === "recent") {
@@ -66,27 +105,7 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       orderBy: { createdAt: "desc" },
-      include: {
-        user: { include: { profile: true } },
-        reactions: true,
-        comments: {
-          where: { parentId: null },
-          take: 3,
-          orderBy: { createdAt: "desc" },
-          include: { user: { include: { profile: true } } },
-        },
-        poll: { include: { options: { include: { votes: true } } } },
-        _count: { select: { comments: true, reactions: true } },
-        shares: { select: { userId: true, content: true } },
-        parentPost: {
-          include: {
-            user: { include: { profile: true } },
-            reactions: true,
-            poll: { include: { options: { include: { votes: true } } } },
-            _count: { select: { comments: true, reactions: true } },
-          }
-        },
-      },
+      include: commonIncludes,
     });
 
     const hasMore = posts.length > limit;
@@ -102,27 +121,7 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       orderBy: { createdAt: "desc" },
-      include: {
-        user: { include: { profile: true } },
-        reactions: true,
-        comments: {
-          where: { parentId: null },
-          take: 3,
-          orderBy: { createdAt: "desc" },
-          include: { user: { include: { profile: true } } },
-        },
-        poll: { include: { options: { include: { votes: true } } } },
-        _count: { select: { comments: true, reactions: true } },
-        shares: { select: { userId: true, content: true } },
-        parentPost: {
-          include: {
-            user: { include: { profile: true } },
-            reactions: true,
-            poll: { include: { options: { include: { votes: true } } } },
-            _count: { select: { comments: true, reactions: true } },
-          }
-        },
-      },
+      include: commonIncludes,
     });
 
     // Rank

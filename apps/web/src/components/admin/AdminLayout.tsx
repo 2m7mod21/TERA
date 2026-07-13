@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/support", label: "Support Center", icon: Headphones, section: "support", group: "People" },
   { href: "/admin/content", label: "Content", icon: FileText, section: "content", group: "Moderation" },
   { href: "/admin/reports", label: "Reports", icon: ShieldAlert, section: "reports", group: "Moderation" },
+  { href: "/admin/moderation", label: "Word Moderation", icon: Shield, section: "reports", group: "Moderation" },
   { href: "/admin/ai-moderation", label: "AI Moderation", icon: Bot, section: "aiModeration", group: "Moderation" },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare, section: "messages", group: "Moderation" },
   { href: "/admin/monetization", label: "Monetization", icon: DollarSign, section: "monetization", group: "Business" },

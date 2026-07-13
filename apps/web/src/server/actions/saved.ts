@@ -132,7 +132,21 @@ export async function getSavedPosts(collectionId?: string) {
           include: {
             user: { include: { profile: true } },
             reactions: true,
-            _count: { select: { comments: true } },
+            _count: { select: { comments: true, reactions: true } },
+            shares: { select: { userId: true, content: true } },
+            bookmarks: {
+              where: { userId: session.user.id },
+              select: { id: true },
+            },
+            parentPost: {
+              include: {
+                user: { include: { profile: true } },
+                reactions: true,
+                poll: { include: { options: { include: { votes: true } } } },
+                shares: { select: { userId: true, content: true } },
+                _count: { select: { comments: true, reactions: true } },
+              }
+            },
           },
         },
       },

@@ -7,39 +7,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createNotification } from "./notifications";
 import { emitNotification } from "@/server/socket/index";
+import { persistMentions } from "./mentions";
+import { ModerationService } from "@/services/moderation";
+import { logViolationAction } from "./moderation";
 
-// ─── Helper: parse mentions from text ────────────────────────────────────────
-function extractMentions(text: string): string[] {
-  const matches = text.match(/@(\w+)/g) ?? [];
-  return [...new Set(matches.map((m) => m.slice(1).toLowerCase()))];
-}
-
-// ─── Helper: notify all mentioned users ──────────────────────────────────────
-async function notifyMentions(
-  text: string,
-  senderId: string,
-  entityId: string,
-  entityType: "POST" | "COMMENT"
-) {
-  const usernames = extractMentions(text);
-  if (!usernames.length) return;
-  const profiles = await prisma.profile.findMany({
-    where: { username: { in: usernames } },
-    select: { userId: true },
-  });
-  for (const p of profiles) {
-    if (p.userId === senderId) continue;
-    const n = await createNotification({
-      receiverId: p.userId,
-      senderId,
-      type: "MENTION",
-      entityId,
-      entityType,
-      priority: 1,
-    });
-    if (n) emitNotification(p.userId, n);
-  }
-}
 
 export async function createPost(formData: any) {
   const session = await auth();
@@ -49,11 +20,53 @@ export async function createPost(formData: any) {
   if (!result.success) return { success: false, error: result.error.flatten().fieldErrors };
 
   try {
+    const modSetting = await prisma.platformSetting.findUnique({
+      where: { key: "moderation_action" }
+    });
+    const moderationAction = modSetting?.value || "BLOCK";
+
+    let cleanContent = result.data.content;
+    let violationResult = null;
+
+    if (result.data.content) {
+      const modResult = await ModerationService.checkText(result.data.content);
+      if (!modResult.allowed) {
+        if (moderationAction === "BLOCK") {
+          await logViolationAction(session.user.id, {
+            contentType: "POST",
+            violationType: modResult.reason || "PROFANITY",
+            severity: modResult.severity || "LOW",
+            matchedWords: modResult.matchedWords,
+          });
+          const wordList = modResult.matchedWords?.join(", ") || "prohibited content";
+          return {
+            success: false,
+            error: { global: `Your post contains a prohibited word: "${wordList}". Please remove it before posting.` },
+            matchedWords: modResult.matchedWords,
+          };
+        } else if (moderationAction === "REPLACE") {
+          cleanContent = modResult.cleanText;
+          result.data.content = cleanContent;
+        }
+        violationResult = modResult;
+      }
+    }
+
     const post = await PostRepository.createPost({ userId: session.user.id, ...result.data });
 
-    // Notify mentions
+    if (violationResult) {
+      await logViolationAction(session.user.id, {
+        contentType: "POST",
+        contentId: post.id,
+        violationType: violationResult.reason || "PROFANITY",
+        severity: violationResult.severity || "LOW",
+        matchedWords: violationResult.matchedWords,
+      });
+    }
+
+    // Persist + notify mentions
     if (result.data.content) {
-      await notifyMentions(result.data.content, session.user.id, post.id, "POST");
+      await persistMentions(result.data.content, session.user.id, { postId: post.id }, 10);
     }
 
     revalidatePath("/");
@@ -124,7 +137,49 @@ export async function addComment(commentData: any) {
   if (!result.success) return { success: false, error: result.error.flatten().fieldErrors };
 
   try {
+    const modSetting = await prisma.platformSetting.findUnique({
+      where: { key: "moderation_action" }
+    });
+    const moderationAction = modSetting?.value || "BLOCK";
+
+    let cleanContent = result.data.content;
+    let violationResult = null;
+
+    if (result.data.content) {
+      const modResult = await ModerationService.checkText(result.data.content);
+      if (!modResult.allowed) {
+        if (moderationAction === "BLOCK") {
+          await logViolationAction(session.user.id, {
+            contentType: "COMMENT",
+            violationType: modResult.reason || "PROFANITY",
+            severity: modResult.severity || "LOW",
+            matchedWords: modResult.matchedWords,
+          });
+          const wordList = modResult.matchedWords?.join(", ") || "prohibited content";
+          return {
+            success: false,
+            error: { global: `Your comment contains a prohibited word: "${wordList}". Please remove it.` },
+            matchedWords: modResult.matchedWords,
+          };
+        } else if (moderationAction === "REPLACE") {
+          cleanContent = modResult.cleanText;
+          result.data.content = cleanContent;
+        }
+        violationResult = modResult;
+      }
+    }
+
     const comment = await PostRepository.addComment({ userId: session.user.id, ...result.data });
+
+    if (violationResult) {
+      await logViolationAction(session.user.id, {
+        contentType: "COMMENT",
+        contentId: comment.id,
+        violationType: violationResult.reason || "PROFANITY",
+        severity: violationResult.severity || "LOW",
+        matchedWords: violationResult.matchedWords,
+      });
+    }
 
     const { postId, parentId, content } = result.data;
 
@@ -162,9 +217,9 @@ export async function addComment(commentData: any) {
       }
     }
 
-    // Notify mentions in comment text
+    // Persist + notify mentions in comment text
     if (content) {
-      await notifyMentions(content, session.user.id, comment.id, "COMMENT");
+      await persistMentions(content, session.user.id, { postId: postId ?? undefined, commentId: comment.id }, 5);
     }
 
     if (postId) revalidatePath("/");
@@ -334,6 +389,8 @@ export async function reportPost(postId: string, reason: string, details?: strin
     const r = await prisma.report.create({
       data: {
         reporterId: session.user.id,
+        contentType: "POST",
+        contentId: postId,
         postId,
         reason,
         details: details || null,

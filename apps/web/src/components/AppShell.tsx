@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { auth } from "@/server/auth/config";
 import { getSuggestedUsers, getTrendingTopics, getActiveFriends } from "@/server/actions/feed";
+import { getUnreadCount } from "@/server/actions/notifications";
 import TopNav from "@/components/TopNav";
 import RightSidebar from "@/components/RightSidebar";
 import {
@@ -32,15 +33,16 @@ export default async function AppShell({ children }: { children: React.ReactNode
   const session = await auth();
   const user = session?.user as any;
 
-  const [suggested, trending, active] = await Promise.all([
+  const [suggested, trending, active, notifCount] = await Promise.all([
     getSuggestedUsers(6),
     getTrendingTopics(6),
     getActiveFriends(6),
+    getUnreadCount(),
   ]);
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <TopNav user={user} />
+      <TopNav user={user} notifCount={notifCount} />
 
       <div className="flex max-w-[1280px] mx-auto pt-14">
         {/* ── Left Sidebar ── */}

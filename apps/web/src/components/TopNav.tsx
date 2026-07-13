@@ -6,9 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Home, Users, MessageCircle, Bell, Video, Search, Settings,
-  LogOut, User, Shield, ChevronDown, X, Menu,
+  LogOut, User, Shield, ChevronDown, X, Menu, Plus
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import { getSavedAccounts, saveAccount, removeSavedAccount, type SavedAccount } from "@/lib/accounts";
+import { generateSwitchToken } from "@/server/actions/accounts";
+import { signIn } from "next-auth/react";
 
 interface TopNavProps {
   user: any;
@@ -25,6 +28,53 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
   const [mobileMenu, setMobileMenu] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
+
+  useEffect(() => {
+    const loadAndRegister = async () => {
+      const accounts = getSavedAccounts();
+      if (user?.id) {
+        setSavedAccounts(accounts.filter((a) => a.id !== user.id));
+        try {
+          const res = await generateSwitchToken();
+          if (res.success && res.token) {
+            saveAccount({
+              id: user.id,
+              email: user.email ?? "",
+              name: user.name ?? "User",
+              image: user.image ?? null,
+              username: user.username ?? "user",
+              switchToken: res.token,
+            });
+            setSavedAccounts(getSavedAccounts().filter((a) => a.id !== user.id));
+          }
+        } catch (e) {
+          console.error("Failed to generate switch token for current account", e);
+        }
+      } else {
+        setSavedAccounts(accounts);
+      }
+    };
+    loadAndRegister();
+  }, [user]);
+
+  const handleSwitch = async (acc: SavedAccount) => {
+    await signIn("credentials", {
+      userId: acc.id,
+      switchToken: acc.switchToken,
+      callbackUrl: "/",
+    });
+  };
+
+  const handleRemoveSaved = (id: string) => {
+    removeSavedAccount(id);
+    setSavedAccounts(prev => prev.filter((a) => a.id !== id));
+  };
+
+  const handleAddAccount = () => {
+    signOut({ callbackUrl: "/auth/login" });
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -204,7 +254,47 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                     <Settings className="w-4 h-4 text-zinc-400" />
                     Settings
                   </Link>
+                  {savedAccounts.length > 0 && (
+                    <div className="border-t border-zinc-800/80 px-2 py-2">
+                      <p className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-500">Switch Account</p>
+                      {savedAccounts.map((acc) => (
+                        <div key={acc.id} className="flex items-center justify-between group/acc px-2 py-1.5 rounded-xl hover:bg-zinc-800/50 transition-all cursor-pointer">
+                          <div onClick={() => handleSwitch(acc)} className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                              {acc.image ? (
+                                <img src={acc.image} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-white text-xs font-bold">{acc.name[0]?.toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-zinc-200 truncate leading-snug">{acc.name}</p>
+                              <p className="text-[10px] text-zinc-400 truncate mt-0.5">@{acc.username}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveSaved(acc.id);
+                            }}
+                            className="p-1 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover/acc:opacity-100 transition-all"
+                            title="Remove saved account"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="border-t border-zinc-800 mt-1 pt-1">
+                    <button
+                      onClick={handleAddAccount}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-violet-400 hover:bg-violet-500/10 transition-all w-full text-left"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Account
+                    </button>
                     <button
                       onClick={() => signOut({ callbackUrl: "/auth/login" })}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-400 hover:bg-rose-500/10 transition-all w-full text-left"

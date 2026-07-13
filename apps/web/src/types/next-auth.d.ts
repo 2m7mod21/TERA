@@ -9,6 +9,8 @@ declare module "next-auth" {
       isVerified: boolean;
       verifiedBadge: boolean;
       twoFactorEnabled: boolean;
+      isBanned: boolean;
+      isSuspended: boolean;
     } & DefaultSession["user"];
   }
 
@@ -19,6 +21,8 @@ declare module "next-auth" {
     isVerified?: boolean;
     verifiedBadge?: boolean;
     twoFactorEnabled?: boolean;
+    isBanned?: boolean;
+    isSuspended?: boolean;
   }
 }
 
@@ -30,5 +34,7 @@ declare module "next-auth/jwt" {
     isVerified?: boolean;
     verifiedBadge?: boolean;
     twoFactorEnabled?: boolean;
+    isBanned?: boolean;
+    isSuspended?: boolean;
   }
 }

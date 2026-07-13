@@ -133,11 +133,16 @@ export default function ReportModal({
         reason: selectedReason,
         details: details.trim() || undefined,
       });
-      if (res.success) {
+      if (res && res.success) {
         setReportId(res.reportId ?? null);
         setStep("done");
       } else {
-        setError(typeof res.error === "string" ? res.error : "Submission failed. Please try again.");
+        const errMsg = res && typeof res.error === "string"
+          ? res.error
+          : typeof res?.error === "object" && res?.error !== null
+          ? JSON.stringify(res.error)
+          : "Submission failed. Please try again.";
+        setError(errMsg);
       }
     });
   };

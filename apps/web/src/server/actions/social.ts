@@ -54,26 +54,6 @@ export async function getProfileByUsername(username: string) {
     include: {
       user: {
         include: {
-          posts: {
-            where: { visibility: "PUBLIC" },
-            orderBy: { createdAt: "desc" },
-            include: {
-              reactions: true,
-              comments: {
-                orderBy: { createdAt: "asc" },
-                include: { user: { include: { profile: true } } },
-              },
-              _count: { select: { comments: true, reactions: true } },
-              parentPost: {
-                include: {
-                  user: { include: { profile: true } },
-                  reactions: true,
-                  poll: { include: { options: { include: { votes: true } } } },
-                  _count: { select: { comments: true, reactions: true } },
-                }
-              },
-            },
-          },
           followers: true,
           following: true,
         },
@@ -108,12 +88,49 @@ export async function getProfileByUsername(username: string) {
     }
   }
 
-  // Get pinned posts
+  const visibilityCondition = isOwnProfile
+    ? { in: ["PUBLIC", "FRIENDS", "PRIVATE"] }
+    : isFollowing
+    ? { in: ["PUBLIC", "FRIENDS"] }
+    : "PUBLIC";
+
+  // Query actual posts matching authorized visibility
+  const dbPosts = await prisma.post.findMany({
+    where: {
+      userId: profile.userId,
+      visibility: visibilityCondition,
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      reactions: true,
+      comments: {
+        orderBy: { createdAt: "asc" },
+        include: { user: { include: { profile: true } } },
+      },
+      _count: { select: { comments: true, reactions: true } },
+      parentPost: {
+        include: {
+          user: { include: { profile: true } },
+          reactions: true,
+          poll: { include: { options: { include: { votes: true } } } },
+          shares: { select: { userId: true, content: true } },
+          _count: { select: { comments: true, reactions: true } },
+        }
+      },
+      shares: { select: { userId: true, content: true } },
+      bookmarks: session?.user?.id ? {
+        where: { userId: session.user.id },
+        select: { id: true },
+      } : undefined,
+    },
+  });
+
+  // Get pinned posts matching authorized visibility
   const pinnedPosts = await (prisma.post as any).findMany({
     where: {
       userId: profile.userId,
       isPinned: true,
-      visibility: isOwnProfile ? undefined : "PUBLIC",
+      visibility: visibilityCondition,
     },
     include: {
       user: { include: { profile: true } },
@@ -124,7 +141,7 @@ export async function getProfileByUsername(username: string) {
   });
 
   // Map posts to include the user object expected by PostCard
-  const postsWithUser = profile.user.posts.map((post: any) => ({
+  const postsWithUser = dbPosts.map((post: any) => ({
     ...post,
     user: {
       id: profile.user.id,

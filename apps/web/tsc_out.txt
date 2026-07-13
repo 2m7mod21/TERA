@@ -44,41 +44,28 @@ src/components/admin/SupportClient.tsx(4,50): error TS6133: 'CornerDownRight' is
 src/components/admin/SupportClient.tsx(4,67): error TS6133: 'Clock' is declared but its value is never read.
 src/components/admin/SystemClient.tsx(4,10): error TS6133: 'Monitor' is declared but its value is never read.
 src/components/admin/SystemClient.tsx(4,46): error TS6133: 'Clock' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(5,31): error TS6133: 'UserMinus' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(5,42): error TS6133: 'Trash2' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(5,50): error TS6133: 'Ban' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(6,3): error TS6133: 'Eye' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(6,8): error TS6133: 'EyeOff' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(6,28): error TS6133: 'RefreshCw' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(7,3): error TS6133: 'Calendar' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(7,26): error TS6133: 'CheckCircle' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(7,39): error TS6133: 'HelpCircle' is declared but its value is never read.
-src/components/admin/UsersClient.tsx(9,9): error TS6133: 'Check' is declared but its value is never read.
+src/components/admin/UsersClient.tsx(4,18): error TS6133: 'ShieldAlert' is declared but its value is never read.
+src/components/admin/UsersClient.tsx(4,31): error TS6133: 'Award' is declared but its value is never read.
+src/components/admin/UsersClient.tsx(4,38): error TS6133: 'UserMinus' is declared but its value is never read.
+src/components/admin/UsersClient.tsx(4,49): error TS6133: 'Trash2' is declared but its value is never read.
+src/components/admin/UsersClient.tsx(4,57): error TS6133: 'Ban' is declared but its value is never read.
 src/components/admin/VerificationClient.tsx(3,17): error TS6133: 'startTransition' is declared but its value is never read.
 src/components/admin/VerificationClient.tsx(4,33): error TS6133: 'ShieldAlert' is declared but its value is never read.
 src/components/admin/VerificationClient.tsx(5,30): error TS6133: 'verifyUser' is declared but its value is never read.
-src/components/Stories.tsx(3,46): error TS6133: 'useCallback' is declared but its value is never read.
-src/components/Stories.tsx(5,12): error TS6133: 'ChevronLeft' is declared but its value is never read.
-src/components/Stories.tsx(5,25): error TS6133: 'ChevronRight' is declared but its value is never read.
-src/components/Stories.tsx(5,48): error TS6133: 'Globe' is declared but its value is never read.
-src/components/Stories.tsx(6,55): error TS6133: 'Video' is declared but its value is never read.
-src/components/Stories.tsx(6,68): error TS6133: 'MoreVertical' is declared but its value is never read.
-src/components/Stories.tsx(7,3): error TS6133: 'Check' is declared but its value is never read.
-src/components/Stories.tsx(7,10): error TS6133: 'Trash2' is declared but its value is never read.
-src/components/Stories.tsx(7,18): error TS6133: 'Award' is declared but its value is never read.
-src/components/Stories.tsx(7,25): error TS6133: 'Zap' is declared but its value is never read.
-src/components/Stories.tsx(7,30): error TS6133: 'HelpCircle' is declared but its value is never read.
-src/components/Stories.tsx(408,28): error TS2339: Property 'viewCount' does not exist on type 'Story'.
-src/components/Stories.tsx(410,45): error TS2339: Property 'expiresAt' does not exist on type 'Story'.
-src/components/Stories.tsx(603,21): error TS6133: 'setTextColor' is declared but its value is never read.
-src/components/Stories.tsx(664,24): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
-src/components/Stories.tsx(664,40): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
-src/components/Stories.tsx(1058,81): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
-src/components/Stories.tsx(1064,65): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
+src/components/CommentModal.tsx(4,22): error TS6133: 'Heart' is declared but its value is never read.
+src/components/CommentModal.tsx(4,29): error TS6133: 'Share2' is declared but its value is never read.
+src/components/CommentModal.tsx(4,37): error TS6133: 'MessageSquare' is declared but its value is never read.
+src/components/CommentModal.tsx(29,10): error TS6133: 'scrollYSnapshot' is declared but its value is never read.
+src/components/HomeFeed.tsx(664,21): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/HomeFeed.tsx(683,23): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/ReactionsModal.tsx(3,38): error TS6133: 'useRef' is declared but its value is never read.
+src/components/ReactionsModal.tsx(96,23): error TS2345: Argument of type '(prev: Record<string, boolean>) => { [x: string]: boolean | undefined; }' is not assignable to parameter of type 'SetStateAction<Record<string, boolean>>'.
+  Type '(prev: Record<string, boolean>) => { [x: string]: boolean | undefined; }' is not assignable to type '(prevState: Record<string, boolean>) => Record<string, boolean>'.
+    Type '{ [x: string]: boolean | undefined; }' is not assignable to type 'Record<string, boolean>'.
+      'string' index signatures are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/components/ReactionsModal.tsx(130,27): error TS2345: Argument of type '"click"' is not assignable to parameter of type 'SoundName'.
 src/components/VideoPlayer.tsx(6,22): error TS6133: 'Settings' is declared but its value is never read.
 src/lib/adminAuth.ts(172,7): error TS2322: Type 'PermissionMatrix | undefined' is not assignable to type 'PermissionMatrix'.
   Type 'undefined' is not assignable to type 'PermissionMatrix'.
@@ -101,4 +88,31 @@ src/server/actions/admin/reports.ts(436,7): error TS2322: Type 'string | undefin
 src/server/actions/admin/reports.ts(514,50): error TS2532: Object is possibly 'undefined'.
 src/server/actions/admin/reports.ts(624,50): error TS2532: Object is possibly 'undefined'.
 src/server/actions/admin/security.ts(22,50): error TS2532: Object is possibly 'undefined'.
-src/server/actions/admin/users.ts(77,52): error TS2532: Object is possibly 'undefined'.
+src/server/actions/admin/users.ts(49,32): error TS2532: Object is possibly 'undefined'.
+src/server/actions/feed.ts(108,7): error TS2322: Type '{ user: { include: { profile: boolean; }; }; reactions: boolean; comments: { where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }; poll: { ...; }; _count: { ...; }; shares: { ...; }; bookmarks: { ...; } | undefined; parentPost: { ...; }...' is not assignable to type 'PostInclude<DefaultArgs>'.
+  Types of property 'comments' are incompatible.
+    Type '{ where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }' is not assignable to type 'boolean | Post$commentsArgs<DefaultArgs> | undefined'.
+      Type '{ where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }' is not assignable to type 'Post$commentsArgs<DefaultArgs>'.
+        Types of property 'orderBy' are incompatible.
+          Type '{ createdAt: string; }' is not assignable to type 'CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[] | undefined'.
+            Type '{ createdAt: string; }' is not assignable to type 'CommentOrderByWithRelationInput'.
+              Types of property 'createdAt' are incompatible.
+                Type 'string' is not assignable to type 'SortOrder | undefined'.
+src/server/actions/feed.ts(124,7): error TS2322: Type '{ user: { include: { profile: boolean; }; }; reactions: boolean; comments: { where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }; poll: { ...; }; _count: { ...; }; shares: { ...; }; bookmarks: { ...; } | undefined; parentPost: { ...; }...' is not assignable to type 'PostInclude<DefaultArgs>'.
+  Types of property 'comments' are incompatible.
+    Type '{ where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }' is not assignable to type 'boolean | Post$commentsArgs<DefaultArgs> | undefined'.
+      Type '{ where: { parentId: null; }; take: number; orderBy: { createdAt: string; }; include: { user: { include: { profile: boolean; }; }; }; }' is not assignable to type 'Post$commentsArgs<DefaultArgs>'.
+        Types of property 'orderBy' are incompatible.
+          Type '{ createdAt: string; }' is not assignable to type 'CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[] | undefined'.
+            Type '{ createdAt: string; }' is not assignable to type 'CommentOrderByWithRelationInput'.
+              Types of property 'createdAt' are incompatible.
+                Type 'string' is not assignable to type 'SortOrder | undefined'.
+src/server/actions/moderation.ts(15,7): error TS2322: Type '{ reporterId: string; postId: string; reason: string; status: string; }' is not assignable to type '(Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput) | (Without<...> & ReportCreateInput)'.
+  Type '{ reporterId: string; postId: string; reason: string; status: string; }' is not assignable to type 'Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput'.
+    Type '{ reporterId: string; postId: string; reason: string; status: string; }' is missing the following properties from type 'ReportUncheckedCreateInput': contentType, contentId
+src/server/actions/posts.ts(335,7): error TS2322: Type '{ reporterId: string; postId: string; reason: string; details: string | null; status: string; }' is not assignable to type '(Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput) | (Without<...> & ReportCreateInput)'.
+  Type '{ reporterId: string; postId: string; reason: string; details: string | null; status: string; }' is not assignable to type 'Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput'.
+    Type '{ reporterId: string; postId: string; reason: string; details: string | null; status: string; }' is missing the following properties from type 'ReportUncheckedCreateInput': contentType, contentId
+src/server/services/moderation.service.ts(38,9): error TS2322: Type '{ reporterId: string; postId: string | null; reason: string; details: string | null; status: string; }' is not assignable to type '(Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput) | (Without<...> & ReportCreateInput)'.
+  Type '{ reporterId: string; postId: string | null; reason: string; details: string | null; status: string; }' is not assignable to type 'Without<ReportCreateInput, ReportUncheckedCreateInput> & ReportUncheckedCreateInput'.
+    Type '{ reporterId: string; postId: string | null; reason: string; details: string | null; status: string; }' is missing the following properties from type 'ReportUncheckedCreateInput': contentType, contentId

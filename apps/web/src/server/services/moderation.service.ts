@@ -34,9 +34,13 @@ export class ModerationService {
     const { reporterId, postId, commentId, reason } = params;
 
     try {
+      const contentType = postId ? "POST" : commentId ? "COMMENT" : "OTHER";
+      const contentId = postId || commentId || "unknown";
       return prisma.report.create({
         data: {
           reporterId,
+          contentType,
+          contentId,
           postId: postId || null,
           reason,
           details: commentId ? `Comment ID: ${commentId}` : null,

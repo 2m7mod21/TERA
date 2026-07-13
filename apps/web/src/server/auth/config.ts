@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { loginSchema } from "@/lib/utils";
+import crypto from "crypto";
 
 export const authConfig = {
   providers: [
@@ -18,6 +19,40 @@ export const authConfig = {
     }),
     Credentials({
       async authorize(credentials) {
+        if (credentials?.switchToken && credentials?.userId) {
+          try {
+            const token = credentials.switchToken as string;
+            const targetUserId = credentials.userId as string;
+            const secret = process.env.NEXTAUTH_SECRET || "fallback-secret";
+            const [header, body, signature] = token.split(".");
+            if (!header || !body || !signature) return null;
+            const expectedSig = crypto
+              .createHmac("sha256", secret)
+              .update(`${header}.${body}`)
+              .digest("base64url");
+            if (signature === expectedSig) {
+              const payload = JSON.parse(Buffer.from(body, "base64url").toString());
+              if (payload.userId === targetUserId) {
+                const user = await prisma.user.findUnique({
+                  where: { id: targetUserId },
+                  include: { profile: true }
+                });
+                if (user) {
+                  return {
+                    id: user.id,
+                    email: user.email,
+                    name: user.profile?.displayName || user.email,
+                    image: user.profile?.avatarUrl,
+                  };
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Token switch authorization failed", e);
+          }
+          return null;
+        }
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
@@ -64,6 +99,30 @@ export const authConfig = {
           token.isVerified = dbUser.isVerified;
           token.verifiedBadge = dbUser.verifiedBadge;
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
+          token.isBanned = dbUser.isBanned;
+          token.isSuspended = dbUser.isSuspended;
+        }
+      }
+
+      // On every token refresh (not just sign-in), re-check ban/suspend status from DB
+      // This ensures a ban takes effect within one token TTL cycle (~30s by default)
+      if (!user && token.userId) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: token.userId as string },
+            select: { isBanned: true, isSuspended: true, isAdmin: true, verifiedBadge: true },
+          });
+          if (freshUser) {
+            token.isBanned = freshUser.isBanned;
+            token.isSuspended = freshUser.isSuspended;
+            token.isAdmin = freshUser.isAdmin;
+            token.verifiedBadge = freshUser.verifiedBadge;
+          } else {
+            // User was deleted — invalidate token
+            return null as any;
+          }
+        } catch {
+          // DB error — keep existing token to avoid mass logouts on transient errors
         }
       }
 
@@ -81,6 +140,8 @@ export const authConfig = {
         session.user.isVerified = token.isVerified as boolean;
         session.user.verifiedBadge = token.verifiedBadge as boolean;
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
+        session.user.isBanned = token.isBanned as boolean;
+        session.user.isSuspended = token.isSuspended as boolean;
       }
       return session;
     },
@@ -88,6 +149,24 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage = nextUrl.pathname.startsWith("/auth");
       const isAdminPage = nextUrl.pathname.startsWith("/admin");
+
+      // Always allow access to banned/suspended notice pages
+      if (
+        nextUrl.pathname === "/auth/banned" ||
+        nextUrl.pathname === "/auth/suspended"
+      ) {
+        return true;
+      }
+
+      // Force banned users off the platform immediately
+      if (isLoggedIn && auth.user.isBanned) {
+        return Response.redirect(new URL("/auth/banned", nextUrl));
+      }
+
+      // Force suspended users off the platform
+      if (isLoggedIn && auth.user.isSuspended) {
+        return Response.redirect(new URL("/auth/suspended", nextUrl));
+      }
 
       if (isAuthPage) {
         if (isLoggedIn) {
