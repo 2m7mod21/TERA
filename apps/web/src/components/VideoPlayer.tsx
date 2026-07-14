@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  PictureInPicture2, Settings, RotateCcw, Loader2, AlertCircle,
+  PictureInPicture2, RotateCcw, Loader2, AlertCircle,
 } from "lucide-react";
 
 interface VideoPlayerProps {
@@ -194,7 +194,7 @@ export default function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative bg-black rounded-xl overflow-hidden group ${className}`}
+      className={`relative bg-black rounded-xl overflow-hidden group flex items-center justify-center ${className}`}
       onMouseMove={resetControlsTimer}
       onMouseLeave={() => playing && setShowControls(false)}
       onClick={togglePlay}
@@ -206,7 +206,7 @@ export default function VideoPlayer({
         autoPlay={autoPlay}
         playsInline
         preload="metadata"
-        className="w-full h-full object-contain"
+        className="w-full h-auto max-h-[560px] object-contain"
         style={{ display: error ? "none" : "block" }}
       />
 

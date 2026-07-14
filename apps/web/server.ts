@@ -40,7 +40,12 @@ app.prepare().then(() => {
         };
         const contentType = mimeTypes[ext] || "application/octet-stream";
 
-        res.writeHead(200, { "Content-Type": contentType });
+        res.writeHead(200, {
+          "Content-Type": contentType,
+          // Filenames are timestamp-prefixed → always unique → safe to cache forever
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Vary": "Accept-Encoding",
+        });
         const stream = fs.createReadStream(filePath);
         stream.pipe(res);
       });

@@ -595,9 +595,153 @@ function OverflowMenu({
   ) : null;
 }
 
+// ─── Professional Poll Display ────────────────────────────────────────────────
+function PollDisplay({ poll, currentUserId, postId }: { poll: any; currentUserId: string | null; postId: string }) {
+  const t = useTranslations("feed");
+
+  // Build initial optimistic state from server data
+  const [opts, setOpts] = useState<{ id: string; text: string; count: number; myVote: boolean }[]>(() =>
+    (poll.options ?? []).map((o: any) => ({
+      id: o.id,
+      text: o.text,
+      count: o.votes?.length ?? 0,
+      myVote: !!currentUserId && (o.votes ?? []).some((v: any) => v.userId === currentUserId),
+    }))
+  );
+  const [voting, setVoting] = useState<string | null>(null);
+
+  const hasVoted = opts.some((o) => o.myVote);
+  const total = opts.reduce((s, o) => s + o.count, 0);
+
+  // Expiry
+  const isExpired = poll.expiresAt ? new Date(poll.expiresAt) < new Date() : false;
+  const expiryLabel = (() => {
+    if (!poll.expiresAt) return null;
+    if (isExpired) return "Poll ended";
+    const diff = Math.ceil((new Date(poll.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return diff <= 1 ? "Ends today" : `${diff} days left`;
+  })();
+
+  const canVoteOrChange = !isExpired && !voting;
+
+  const handleVote = async (optId: string) => {
+    if (voting || isExpired) return;
+    // Same option → do nothing (already voted for this)
+    if (opts.find(o => o.id === optId)?.myVote) return;
+    setVoting(optId);
+
+    // Optimistic update — move vote instantly
+    setOpts((prev) => {
+      const prevVotedCount = prev.find(o => o.myVote)?.count ?? 0;
+      return prev.map((o) => {
+        if (o.id === optId) return { ...o, count: o.count + 1, myVote: true };
+        if (o.myVote)        return { ...o, count: Math.max(0, o.count - 1), myVote: false };
+        return o;
+      });
+    });
+
+    try {
+      const { votePoll } = await import("@/server/actions/posts");
+      await votePoll(optId);
+    } catch {
+      // Rollback on error
+      setOpts((prev) =>
+        prev.map((o) =>
+          o.id === optId ? { ...o, count: o.count - 1, myVote: false } : o
+        )
+      );
+    } finally {
+      setVoting(null);
+    }
+  };
+
+  return (
+    <div className="mx-4 mb-3 p-4 rounded-2xl bg-zinc-900/60 border border-violet-500/15">
+      {/* Question */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+          <BarChart2 className="w-3.5 h-3.5 text-violet-400" />
+        </div>
+        <p className="text-sm font-bold text-zinc-100 leading-tight">{poll.question}</p>
+      </div>
+
+      {/* Options */}
+      <div className="space-y-2">
+        {opts.map((opt) => {
+          const pct = total > 0 ? Math.round((opt.count / total) * 100) : 0;
+          const isWinner = opt.count === Math.max(...opts.map(o => o.count), 1) && total > 0;
+          const isClickable = canVoteOrChange && !opt.myVote;
+
+          return (
+            <button
+              key={opt.id}
+              onClick={() => handleVote(opt.id)}
+              disabled={!canVoteOrChange || opt.myVote}
+              className={`relative w-full h-11 rounded-xl overflow-hidden text-left transition-all duration-150
+                ${isClickable ? "cursor-pointer hover:scale-[1.01] active:scale-[0.99]" : opt.myVote ? "cursor-default" : "cursor-not-allowed opacity-60"}
+                ${opt.myVote ? "ring-2 ring-violet-500/60" : ""}
+              `}
+            >
+              {/* Background bar */}
+              <div
+                className={`absolute inset-y-0 left-0 rounded-xl transition-all duration-700 ease-out
+                  ${opt.myVote ? "bg-gradient-to-r from-violet-600/50 to-pink-600/30"
+                    : isWinner && hasVoted ? "bg-violet-500/25"
+                    : "bg-zinc-800"}`}
+                style={{ width: (hasVoted || isExpired) ? `${pct}%` : "100%" }}
+              />
+
+              {/* Content */}
+              <div className="relative z-10 flex items-center justify-between h-full px-3.5">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {opt.myVote && (
+                    <div className="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                  <span className={`text-sm font-medium truncate ${opt.myVote ? "text-white" : "text-zinc-200"}`}>
+                    {opt.text}
+                  </span>
+                </div>
+                {(hasVoted || isExpired) && (
+                  <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                    <span className="text-xs font-bold text-zinc-300">{pct}%</span>
+                    <span className="text-[10px] text-zinc-500">({opt.count})</span>
+                  </div>
+                )}
+                {voting === opt.id && (
+                  <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin ml-2" />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/60">
+        <span className="text-[11px] text-zinc-500">
+          {total.toLocaleString()} {total === 1 ? "vote" : "votes"}
+        </span>
+        {expiryLabel && (
+          <span className={`text-[11px] font-medium ${isExpired ? "text-zinc-600" : "text-violet-400"}`}>
+            {expiryLabel}
+          </span>
+        )}
+        {!isExpired && (
+          <span className="text-[11px] text-zinc-500">
+            {hasVoted ? "Tap another option to change vote" : "Tap to vote"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function PostCard({
   post,
   currentUserId,
+
   onCommentClick,
 }: {
   post: any;
@@ -870,30 +1014,11 @@ export function PostCard({
 
       {/* Poll */}
       {displayPost.poll && (
-        <div className="px-4 py-3 space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart2 className="w-4 h-4 text-violet-400" />
-            <p className="text-sm font-semibold text-zinc-200">{displayPost.poll.question}</p>
-          </div>
-          {displayPost.poll.options?.map((opt: any) => {
-            const total = displayPost.poll.options.reduce((s: number, o: any) => s + o.votes.length, 0);
-            const pct = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
-            const voted = opt.votes.some((v: any) => v.userId === currentUserId);
-            return (
-              <div key={opt.id} className="relative h-9 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 cursor-pointer group"
-                onClick={async () => { const { votePoll } = await import("@/server/actions/posts"); await votePoll(opt.id); }}>
-                <div className={`absolute inset-y-0 inset-inline-start-0 transition-all duration-700 ${voted ? "gradient-btn opacity-40" : "bg-violet-500/20"}`} style={{ width: `${pct}%` }} />
-                <div className="relative z-10 flex justify-between items-center h-full px-3">
-                  <span className="text-sm text-zinc-200 flex items-center gap-1.5">
-                    {voted && <Check className="w-3 h-3 text-violet-400" />}{opt.text}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-semibold">{pct}%</span>
-                </div>
-              </div>
-            );
-          })}
-          <p className="text-xs text-zinc-650">{t("post.votes", { count: displayPost.poll.options?.reduce((s: number, o: any) => s + o.votes.length, 0) })}</p>
-        </div>
+        <PollDisplay
+          poll={displayPost.poll}
+          currentUserId={currentUserId}
+          postId={displayPost.id}
+        />
       )}
 
       {/* Nested Quote Preview */}

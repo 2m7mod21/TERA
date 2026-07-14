@@ -428,8 +428,16 @@ export default function ProfilePageClient({ data }: { data: any }) {
     if (!file) return;
     setUploading(prev => ({ ...prev, [key === "avatarUrl" ? "avatar" : "cover"]: true }));
     try {
+      // Compress before uploading — avatar: 400×400, cover: 1400×500
+      const { compressImage } = await import("@/lib/compressImage");
+      const compressed = await compressImage(
+        file,
+        key === "avatarUrl" ? 400 : 1400,
+        key === "avatarUrl" ? 400 : 500,
+        0.85
+      );
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressed, file.name.replace(/\.[^.]+$/, ".jpg"));
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const d = await res.json();
       if (d.success && d.url) setEditData(prev => ({ ...prev, [key]: d.url }));

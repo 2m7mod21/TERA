@@ -288,9 +288,16 @@ export default function PostComposer({ user }: { user: any }) {
           <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" multiple
             onChange={async e => {
               const files = Array.from(e.target.files || []);
+              const { compressImage } = await import("@/lib/compressImage");
               for (const file of files) {
                 const fd = new FormData();
-                fd.append("file", file);
+                const isImage = file.type.startsWith("image/");
+                if (isImage) {
+                  const compressed = await compressImage(file, 1200, 1200, 0.85);
+                  fd.append("file", compressed, file.name.replace(/\.[^.]+$/, ".jpg"));
+                } else {
+                  fd.append("file", file);
+                }
                 const res = await fetch("/api/upload", { method: "POST", body: fd }).then(r => r.json());
                 if (res.success) setMediaFiles(p => [...p, res.url]);
               }
