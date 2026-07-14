@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, writeAuditLog } from "@/lib/adminAuth";
 import { createNotification } from "@/server/actions/notifications";
 import { revalidatePath } from "next/cache";
+import { QualityScorer } from "@/server/services/feed-engine/quality-scorer";
 
 const PAGE_SIZE = 25;
 
@@ -270,6 +271,13 @@ export async function resolveReport(
   });
 
   revalidatePath("/admin/reports");
+
+  // Wire v2 feed-engine PostQualityCache recomputation
+  const r = await prisma.report.findUnique({ where: { id: reportId }, select: { contentType: true, contentId: true } });
+  if (r && r.contentType === "POST" && r.contentId) {
+    await QualityScorer.recomputePostQuality(r.contentId);
+  }
+
   return { success: true };
 }
 
@@ -329,6 +337,12 @@ export async function moderateContent(
   });
 
   revalidatePath("/admin/reports");
+
+  // Wire v2 feed-engine PostQualityCache recomputation
+  if (targetPostId) {
+    await QualityScorer.recomputePostQuality(targetPostId);
+  }
+
   return { success: true };
 }
 
@@ -469,6 +483,13 @@ export async function moderateUser(
 
   revalidatePath("/admin/reports");
   revalidatePath("/admin/users");
+
+  // Wire v2 feed-engine PostQualityCache recomputation
+  const report = await prisma.report.findUnique({ where: { id: reportId }, select: { contentType: true, contentId: true } });
+  if (report && report.contentType === "POST" && report.contentId) {
+    await QualityScorer.recomputePostQuality(report.contentId);
+  }
+
   return { success: true, strikeNumber };
 }
 
@@ -642,5 +663,12 @@ export async function moderationDecision(
   });
 
   revalidatePath("/admin/ai-moderation");
+
+  // Wire v2 feed-engine PostQualityCache recomputation
+  const item = await prisma.moderationQueue.findUnique({ where: { id: itemId } });
+  if (item && item.entityType === "POST" && item.entityId) {
+    await QualityScorer.recomputePostQuality(item.entityId);
+  }
+
   return { success: true };
 }

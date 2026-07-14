@@ -1,8 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdmin, writeAuditLog } from "@/lib/adminAuth";
-import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function getAnalytics(range: 7 | 14 | 30 = 30) {
   await requireAdmin("analytics", "read");

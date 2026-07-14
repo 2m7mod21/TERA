@@ -1,0 +1,38 @@
+{
+  "title": "Profile",
+  "editProfile": "Edit Profile",
+  "follow": "Follow",
+  "following": "Following",
+  "unfollow": "Unfollow",
+  "message": "Message",
+  "block": "Block",
+  "unblock": "Unblock",
+  "report": "Report",
+  "stats": {
+    "posts": "{count, plural, one {# post} other {# posts}}",
+    "followers": "{count, plural, one {# follower} other {# followers}}",
+    "following": "{count} following"
+  },
+  "tabs": {
+    "posts": "Posts",
+    "media": "Media",
+    "about": "About",
+    "saved": "Saved"
+  },
+  "about": {
+    "bio": "Bio",
+    "location": "Location",
+    "website": "Website",
+    "joinedDate": "Joined {date}",
+    "work": "Works at {company}",
+    "education": "Studied at {school}"
+  },
+  "empty": {
+    "posts": "No posts yet",
+    "media": "No media yet",
+    "saved": "No saved posts"
+  },
+  "verified": "Verified",
+  "admin": "Admin",
+  "creator": "Creator"
+}

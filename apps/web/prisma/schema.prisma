@@ -105,6 +105,15 @@ model User {
   // Admin
   adminUser             AdminUser?
   supportTickets        SupportTicket[]
+
+  // Feed Algorithm relations
+  interactionEvents     InteractionEvent[]     @relation("UserInteractionEvents")
+  feedImpressions       FeedImpression[]       @relation("UserFeedImpressions")
+  affinityScores        AffinityScore[]        @relation("UserAffinityScores")
+  topicAffinities       TopicAffinity[]        @relation("UserTopicAffinities")
+  feedSuppressions      FeedSuppressionEntry[] @relation("UserFeedSuppressions")
+  exposureFatigues      ExposureFatigue[]      @relation("UserExposureFatigues")
+  creatorTrust          CreatorTrust?          @relation("CreatorTrustRelation")
 }
 
 
@@ -284,6 +293,10 @@ model Post {
   reports      Report[]
   views        PostView[]
   hiddenBy     FeedHide[]
+
+  // Feed Algorithm relations
+  feedImpressions FeedImpression[]             @relation("PostFeedImpressions")
+  qualityCache    PostQualityCache?            @relation("PostQualityCacheRelation")
 }
 
 model PostView {
@@ -1091,4 +1104,138 @@ model ImageTag {
   @@index([postId])
   @@index([userId])
 }
+
+// ─────────────────────────────────────────────
+// Feed Algorithm v2 Models
+// ─────────────────────────────────────────────
+
+model InteractionEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("UserInteractionEvents", fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // LIKE, COMMENT, SHARE, HIDE, REPORT, VIEW, CLICK
+  targetType String   // POST, COMMENT, STORY, REEL, USER
+  targetId   String
+  weight     Float    @default(1.0)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, type, createdAt])
+  @@index([targetType, targetId])
+}
+
+model FeedImpression {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation("UserFeedImpressions", fields: [userId], references: [id], onDelete: Cascade)
+  postId         String
+  post           Post     @relation("PostFeedImpressions", fields: [postId], references: [id], onDelete: Cascade)
+  score          Float
+  scoreBreakdown String   // JSON string of components
+  source         String   // FOLLOWING, CONTENT_MATCH, COLLABORATIVE, TRENDING, COLD_START, EXPLORATION, RECENT
+  position       Int      // position in feed (0-indexed)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([postId])
+}
+
+model AffinityScore {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("UserAffinityScores", fields: [userId], references: [id], onDelete: Cascade)
+  targetId   String   // creator userId or category/topic
+  targetType String   // USER or TOPIC
+  score      Float    @default(0.0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, score])
+}
+
+model TopicAffinity {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("UserTopicAffinities", fields: [userId], references: [id], onDelete: Cascade)
+  topic      String
+  score      Float    @default(0.0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, topic])
+  @@index([userId])
+}
+
+model FeedSuppressionEntry {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("UserFeedSuppressions", fields: [userId], references: [id], onDelete: Cascade)
+  targetType String   // AUTHOR, TOPIC, POST
+  targetId   String
+  strength   Float    @default(1.0) // 1.0 = fully suppressed, decays towards 0
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, targetType, targetId])
+}
+
+model ExposureFatigue {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation("UserExposureFatigues", fields: [userId], references: [id], onDelete: Cascade)
+  targetType   String   // AUTHOR, TOPIC, POST
+  targetId     String
+  shownCount   Int      @default(0)
+  engagedCount Int      @default(0)
+  lastShownAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, targetType, targetId])
+}
+
+model PostQualityCache {
+  id                 String   @id @default(uuid())
+  postId             String   @unique
+  post               Post     @relation("PostQualityCacheRelation", fields: [postId], references: [id], onDelete: Cascade)
+  qualityScore       Float    @default(1.0)
+  spamFlags          String   @default("{}") // JSON string of detected flags
+  lastRecalculatedAt DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model CreatorTrust {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation("CreatorTrustRelation", fields: [userId], references: [id], onDelete: Cascade)
+  trustScore         Float    @default(1.0)
+  accountAgeDays     Int      @default(0)
+  verificationStatus Boolean  @default(false)
+  violationCount     Int      @default(0)
+  lastRecalculatedAt DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model FeedWeightConfig {
+  id               String   @id @default(uuid())
+  profileName      String   // e.g. "Default", "Experiment A"
+  componentKey     String   // e.g. "affinity.weight", "recency.decay"
+  weightValue      Float
+  updatedByAdminId String?
+  updatedAt        DateTime @updatedAt
+
+  @@unique([profileName, componentKey])
+}
+
+model FeedWeightAuditLog {
+  id           String   @id @default(uuid())
+  adminId      String
+  profileName  String
+  componentKey String
+  oldValue     Float
+  newValue     Float
+  changedAt    DateTime @default(now())
+
+  @@index([profileName, componentKey])
+}
+
 

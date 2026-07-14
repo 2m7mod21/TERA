@@ -7,9 +7,10 @@ import HomeFeed from "@/components/HomeFeed";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const session = await auth();
-  if (!session?.user) redirect("/auth/login");
+  if (!session?.user) redirect(`/${locale}/auth/login`);
 
   const [{ posts, nextCursor }, suggested, trending, active, stories, notifCount] = await Promise.all([
     getFeedPosts(),

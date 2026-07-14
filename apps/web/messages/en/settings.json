@@ -1,0 +1,67 @@
+{
+  "title": "Settings",
+  "sections": {
+    "account": "Account",
+    "privacy": "Privacy & Safety",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "security": "Security",
+    "language": "Language & Region",
+    "monetization": "Monetization",
+    "connected": "Connected Apps",
+    "data": "Data & Activity",
+    "help": "Help & Support"
+  },
+  "account": {
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "email": "Email address",
+    "phone": "Phone number",
+    "username": "Username",
+    "displayName": "Display name",
+    "bio": "Bio",
+    "website": "Website",
+    "location": "Location",
+    "birthdate": "Date of birth",
+    "deactivate": "Deactivate account",
+    "delete": "Delete account"
+  },
+  "privacy": {
+    "profileVisibility": "Profile visibility",
+    "public": "Public",
+    "friends": "Friends only",
+    "private": "Private",
+    "whoCanMessage": "Who can message you",
+    "whoCanFollow": "Who can follow you",
+    "showActivity": "Show activity status",
+    "blockedUsers": "Blocked users"
+  },
+  "notifications": {
+    "push": "Push notifications",
+    "email": "Email notifications",
+    "likes": "Likes",
+    "comments": "Comments",
+    "follows": "New followers",
+    "mentions": "Mentions",
+    "messages": "Messages",
+    "marketing": "Product updates"
+  },
+  "appearance": {
+    "theme": "Theme",
+    "language": "Language",
+    "fontSize": "Font size",
+    "colorScheme": "Color scheme"
+  },
+  "security": {
+    "twoFactor": "Two-factor authentication",
+    "twoFactorEnabled": "2FA is enabled",
+    "twoFactorDisabled": "2FA is disabled",
+    "enable": "Enable",
+    "disable": "Disable",
+    "activeSessions": "Active sessions",
+    "logOutAll": "Log out of all devices"
+  },
+  "save": "Save changes",
+  "saved": "Changes saved!",
+  "saving": "Saving..."
+}

@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "friends": "الأصدقاء",
+    "messages": "الرسائل",
+    "notifications": "الإشعارات",
+    "watch": "مشاهدة",
+    "saved": "المحفوظات",
+    "search": "ابحث في تيرا...",
+    "admin": "الإدارة",
+    "viewProfile": "عرض الملف الشخصي",
+    "settings": "الإعدادات",
+    "switchAccount": "تبديل الحساب",
+    "addAccount": "إضافة حساب",
+    "signOut": "تسجيل الخروج",
+    "moreOptions": "المزيد من الخيارات"
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "share": "مشاركة",
+    "report": "الإبلاغ",
+    "hide": "إخفاء",
+    "block": "حظر",
+    "follow": "متابعة",
+    "unfollow": "إلغاء المتابعة",
+    "like": "إعجاب",
+    "comment": "تعليق",
+    "submit": "إرسال",
+    "loading": "جارٍ التحميل...",
+    "seeMore": "عرض المزيد",
+    "seeLess": "عرض أقل",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "done": "تم",
+    "retry": "إعادة المحاولة",
+    "copy": "نسخ",
+    "copied": "تم النسخ!",
+    "upload": "رفع",
+    "remove": "إزالة",
+    "apply": "تطبيق",
+    "reset": "إعادة تعيين",
+    "search": "بحث",
+    "clear": "مسح"
+  },
+  "time": {
+    "justNow": "للتو",
+    "minutesAgo": "{count, plural, =0 {الآن} one {منذ دقيقة واحدة} two {منذ دقيقتين} few {منذ # دقائق} many {منذ # دقيقة} other {منذ # دقيقة}}",
+    "hoursAgo": "{count, plural, =0 {الآن} one {منذ ساعة} two {منذ ساعتين} few {منذ # ساعات} many {منذ # ساعة} other {منذ # ساعة}}",
+    "daysAgo": "{count, plural, =0 {اليوم} one {منذ يوم} two {منذ يومين} few {منذ # أيام} many {منذ # يومًا} other {منذ # يوم}}",
+    "weeksAgo": "{count, plural, =0 {هذا الأسبوع} one {منذ أسبوع} two {منذ أسبوعين} few {منذ # أسابيع} many {منذ # أسبوعًا} other {منذ # أسبوع}}",
+    "monthsAgo": "{count, plural, =0 {هذا الشهر} one {منذ شهر} two {منذ شهرين} few {منذ # أشهر} many {منذ # شهرًا} other {منذ # شهر}}",
+    "yearsAgo": "{count, plural, =0 {هذا العام} one {منذ عام} two {منذ عامين} few {منذ # أعوام} many {منذ # عامًا} other {منذ # عام}}"
+  },
+  "language": {
+    "label": "اللغة",
+    "select": "اختر اللغة",
+    "en": "الإنجليزية",
+    "ar": "العربية",
+    "fr": "الفرنسية",
+    "changed": "تم تغيير اللغة إلى {language}"
+  },
+  "theme": {
+    "dark": "داكن",
+    "light": "فاتح",
+    "system": "النظام"
+  },
+  "status": {
+    "online": "متصل",
+    "offline": "غير متصل",
+    "away": "بعيد"
+  },
+  "counts": {
+    "followers": "{count, plural, =0 {متابع} one {متابع واحد} two {متابعان} few {# متابعين} many {# متابعًا} other {# متابع}}",
+    "following": "{count} متابَع",
+    "posts": "{count, plural, =0 {منشورات} one {منشور واحد} two {منشوران} few {# منشورات} many {# منشورًا} other {# منشور}}",
+    "likes": "{count, plural, =0 {إعجابات} one {إعجاب واحد} two {إعجابان} few {# إعجابات} many {# إعجابًا} other {# إعجاب}}",
+    "comments": "{count, plural, =0 {تعليقات} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقًا} other {# تعليق}}"
+  },
+  "empty": {
+    "noResults": "لا توجد نتائج",
+    "noContent": "لا يوجد محتوى بعد"
+  }
+}

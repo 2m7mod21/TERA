@@ -1,0 +1,42 @@
+{
+  "title": "Administration",
+  "dashboard": "Tableau de bord",
+  "users": "Utilisateurs",
+  "content": "Contenu",
+  "reportsNav": "Signalements",
+  "analytics": "Analyses",
+  "moderation": "Modération",
+  "settings": "Paramètres",
+  "feedAlgorithm": "Algorithme du fil",
+  "stats": {
+    "totalUsers": "Total utilisateurs",
+    "activeUsers": "Utilisateurs actifs",
+    "totalPosts": "Total publications",
+    "reports": "Signalements",
+    "pendingReports": "Signalements en attente"
+  },
+  "actions": {
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "ban": "Bannir",
+    "suspend": "Suspendre",
+    "warn": "Avertir",
+    "delete": "Supprimer",
+    "restore": "Restaurer"
+  },
+  "userManagement": {
+    "search": "Rechercher des utilisateurs...",
+    "role": "Rôle",
+    "status": "Statut",
+    "joinedDate": "Rejoint le",
+    "actions": "Actions"
+  },
+  "reports": {
+    "pending": "En attente",
+    "reviewed": "Examinés",
+    "resolved": "Résolus",
+    "reason": "Raison",
+    "reportedBy": "Signalé par",
+    "reportedContent": "Contenu signalé"
+  }
+}

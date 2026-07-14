@@ -371,6 +371,28 @@ async function main() {
     },
   });
 
+  console.log("Seeding Feed Weight Config (default profile)...");
+  const feedWeightDefaults = [
+    { componentKey: "affinity",                 value: 0.30, description: "Weight for viewer→author affinity score",                minValue: 0, maxValue: 1 },
+    { componentKey: "engagement",               value: 0.25, description: "Weight for predicted engagement probability",             minValue: 0, maxValue: 1 },
+    { componentKey: "contentMatch",             value: 0.20, description: "Weight for topic/interest match score",                   minValue: 0, maxValue: 1 },
+    { componentKey: "recency",                  value: 0.15, description: "Weight for freshness/recency decay score",                minValue: 0, maxValue: 1 },
+    { componentKey: "coldStart",                value: 0.10, description: "Boost given to cold-start creator candidates",            minValue: 0, maxValue: 1 },
+    { componentKey: "halfLifeHours",            value: 48,   description: "Recency half-life in hours (lower = fresher bias)",       minValue: 1, maxValue: 720 },
+    { componentKey: "maxPerAuthor",             value: 2,    description: "Max posts per author per page in diversity pass",         minValue: 1, maxValue: 10 },
+    { componentKey: "explorationSlotPct",       value: 0.10, description: "Fraction of feed positions reserved for exploration",    minValue: 0, maxValue: 0.5 },
+    { componentKey: "trendingGuaranteedEvery",  value: 8,    description: "Insert a trending slot every N positions (0=disabled)",  minValue: 0, maxValue: 50 },
+    { componentKey: "coldStartGuaranteedEvery", value: 10,   description: "Insert a cold-start slot every N positions (0=disabled)", minValue: 0, maxValue: 50 },
+  ];
+  const db = prisma as any;
+  for (const w of feedWeightDefaults) {
+    await db.feedWeightConfig.upsert({
+      where: { profileName_componentKey: { profileName: "default", componentKey: w.componentKey } },
+      update: { value: w.value },
+      create: { profileName: "default", ...w, isActive: true },
+    });
+  }
+
   console.log("Database seeded successfully!");
 }
 

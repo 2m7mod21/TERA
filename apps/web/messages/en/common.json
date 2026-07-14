@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "home": "Home",
+    "friends": "Friends",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "watch": "Watch",
+    "saved": "Saved",
+    "search": "Search TERA...",
+    "admin": "Admin",
+    "viewProfile": "View Profile",
+    "settings": "Settings",
+    "switchAccount": "Switch Account",
+    "addAccount": "Add Account",
+    "signOut": "Sign Out",
+    "moreOptions": "More options"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "share": "Share",
+    "report": "Report",
+    "hide": "Hide",
+    "block": "Block",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "like": "Like",
+    "comment": "Comment",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "retry": "Try again",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "upload": "Upload",
+    "remove": "Remove",
+    "apply": "Apply",
+    "reset": "Reset",
+    "search": "Search",
+    "clear": "Clear"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
+    "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+    "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+    "weeksAgo": "{count, plural, one {# week ago} other {# weeks ago}}",
+    "monthsAgo": "{count, plural, one {# month ago} other {# months ago}}",
+    "yearsAgo": "{count, plural, one {# year ago} other {# years ago}}"
+  },
+  "language": {
+    "label": "Language",
+    "select": "Select language",
+    "en": "English",
+    "ar": "Arabic",
+    "fr": "French",
+    "changed": "Language changed to {language}"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "away": "Away"
+  },
+  "counts": {
+    "followers": "{count, plural, one {# Follower} other {# Followers}}",
+    "following": "{count} Following",
+    "posts": "{count, plural, one {# Post} other {# Posts}}",
+    "likes": "{count, plural, one {# Like} other {# Likes}}",
+    "comments": "{count, plural, one {# Comment} other {# Comments}}"
+  },
+  "empty": {
+    "noResults": "No results found",
+    "noContent": "Nothing here yet"
+  }
+}

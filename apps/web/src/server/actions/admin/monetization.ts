@@ -48,7 +48,7 @@ export async function getTransactions(cursor?: string) {
 
   const hasMore = tips.length > 25;
   const items = hasMore ? tips.slice(0, 25) : tips;
-  return { tips: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { tips: items, nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null };
 }
 
 // ── Ads Manager ───────────────────────────────────────────────
@@ -68,7 +68,7 @@ export async function getAdCampaigns(status?: string, cursor?: string) {
 
   const hasMore = campaigns.length > 20;
   const items = hasMore ? campaigns.slice(0, 20) : campaigns;
-  return { campaigns: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { campaigns: items, nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null };
 }
 
 export async function approveAd(campaignId: string) {

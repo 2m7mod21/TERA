@@ -1,4 +1,3 @@
-import { getUsers } from "@/server/actions/admin/users";
 import { requireAdminPage } from "@/lib/adminAuth";
 import VerificationClient from "@/components/admin/VerificationClient";
 import { prisma } from "@/lib/db";

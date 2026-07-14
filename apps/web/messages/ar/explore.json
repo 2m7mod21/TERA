@@ -1,0 +1,54 @@
+{
+  "title": "استكشاف",
+  "search": {
+    "placeholder": "ابحث عن أشخاص، منشورات، وسوم...",
+    "results": "نتائج البحث عن \"{query}\"",
+    "noResults": "لا توجد نتائج لـ \"{query}\"",
+    "people": "الأشخاص",
+    "posts": "المنشورات",
+    "hashtags": "الوسوم",
+    "all": "الكل"
+  },
+  "trending": {
+    "title": "الوسوم الشائعة",
+    "posts": "{count, plural, =0 {منشورات} one {منشور واحد} two {منشوران} few {# منشورات} many {# منشوراً} other {# منشور}}"
+  },
+  "suggested": {
+    "title": "اقتراحات لك",
+    "peopleToFollow": "أشخاص للمتابعة",
+    "peopleYouMayKnow": "أشخاص قد تعرفهم",
+    "seeAll": "عرض الكل",
+    "mutuals": "{count, plural, one {# مشترك} other {# مشتركين}}",
+    "suggestedForYou": "مقترح لك"
+  },
+  "follow": {
+    "follow": "متابعة",
+    "following": "تتابعه",
+    "activeNow": "نشط الآن"
+  },
+  "sponsored": {
+    "label": "مموّل",
+    "title": "TERA بريميوم برو",
+    "description": "افتح ثيمات حصرية ومفاعلات متحركة وملصقات قصص مخصصة مع TERA Premium!",
+    "cta": "ترقية الآن"
+  },
+  "footer": {
+    "links": "الخصوصية · الشروط · الإعلانات · ملفات تعريف الارتباط",
+    "copyright": "© 2025 منصة TERA الاجتماعية"
+  },
+  "categories": {
+    "all": "الكل",
+    "photos": "الصور",
+    "videos": "الفيديوهات",
+    "news": "الأخبار",
+    "sports": "الرياضة",
+    "entertainment": "الترفيه",
+    "technology": "التقنية"
+  },
+  "filter": {
+    "title": "التصفية",
+    "recent": "الأحدث",
+    "popular": "الأكثر رواجاً",
+    "relevance": "الأكثر ملاءمة"
+  }
+}

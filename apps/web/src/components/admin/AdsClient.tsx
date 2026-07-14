@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Megaphone, CheckCircle, XCircle, Pause, Compass, DollarSign } from "lucide-react";
+import { Megaphone } from "lucide-react";
 import { getAdCampaigns, approveAd, rejectAd, pauseAd } from "@/server/actions/admin/monetization";
 
 export default function AdsClient({

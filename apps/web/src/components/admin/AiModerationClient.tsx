@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Bot, Shield, ShieldAlert, Cpu } from "lucide-react";
+import { Bot, Cpu } from "lucide-react";
 import { getModerationQueue, moderationDecision } from "@/server/actions/admin/reports";
 import { updateSetting } from "@/server/actions/admin/settings";
 

@@ -10,6 +10,7 @@ import { emitNotification } from "@/server/socket/index";
 import { persistMentions } from "./mentions";
 import { ModerationService } from "@/services/moderation";
 import { logViolationAction } from "./moderation";
+import { InteractionLogger } from "@/server/services/feed-engine/interaction-logger";
 
 
 export async function createPost(formData: any) {
@@ -91,6 +92,23 @@ export async function toggleReaction(data: {
 
     // Only notify on new reaction (not removal)
     if (result.action === "added" || result.action === "updated") {
+      // Wire v2 Interaction Logging
+      if (data.postId) {
+        await InteractionLogger.log({
+          userId: session.user.id,
+          type: "LIKE",
+          targetType: "POST",
+          targetId: data.postId,
+        });
+      } else if (data.reelId) {
+        await InteractionLogger.log({
+          userId: session.user.id,
+          type: "LIKE",
+          targetType: "REEL",
+          targetId: data.reelId,
+        });
+      }
+
       if (data.postId) {
         const post = await prisma.post.findUnique({ where: { id: data.postId }, select: { userId: true } });
         if (post && post.userId !== session.user.id) {
@@ -170,6 +188,16 @@ export async function addComment(commentData: any) {
     }
 
     const comment = await PostRepository.addComment({ userId: session.user.id, ...result.data });
+
+    // Wire v2 Interaction Logging
+    if (result.data.postId) {
+      await InteractionLogger.log({
+        userId: session.user.id,
+        type: "COMMENT",
+        targetType: "POST",
+        targetId: result.data.postId,
+      });
+    }
 
     if (violationResult) {
       await logViolationAction(session.user.id, {
@@ -314,6 +342,13 @@ export async function viewPost(postId: string) {
         update: {},
         create: { postId, userId },
       });
+      // Wire v2 Interaction Logging
+      await InteractionLogger.log({
+        userId,
+        type: "VIEW",
+        targetType: "POST",
+        targetId: postId,
+      });
     }
     return { success: true };
   } catch (error) {
@@ -340,6 +375,14 @@ export async function sharePost(postId: string) {
         parentPostId: postId,
         visibility: "PUBLIC",
       },
+    });
+
+    // Wire v2 Interaction Logging
+    await InteractionLogger.log({
+      userId: session.user.id,
+      type: "SHARE",
+      targetType: "POST",
+      targetId: postId,
     });
 
     // Notify original post owner
@@ -373,6 +416,13 @@ export async function hidePost(postId: string, reason?: string) {
       update: { reason },
       create: { userId: session.user.id, postId, reason },
     });
+    // Wire v2 Interaction Logging
+    await InteractionLogger.log({
+      userId: session.user.id,
+      type: "HIDE",
+      targetType: "POST",
+      targetId: postId,
+    });
     revalidatePath("/");
     return { success: true };
   } catch (error) {
@@ -396,6 +446,13 @@ export async function reportPost(postId: string, reason: string, details?: strin
         details: details || null,
         status: "PENDING",
       },
+    });
+    // Wire v2 Interaction Logging
+    await InteractionLogger.log({
+      userId: session.user.id,
+      type: "REPORT",
+      targetType: "POST",
+      targetId: postId,
     });
     return { success: true, report: r };
   } catch (error) {

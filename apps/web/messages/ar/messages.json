@@ -1,0 +1,35 @@
+{
+  "title": "الرسائل",
+  "newMessage": "رسالة جديدة",
+  "search": "البحث في المحادثات...",
+  "empty": {
+    "title": "لا توجد رسائل بعد",
+    "subtitle": "ابدأ محادثة الآن",
+    "start": "بدء المراسلة"
+  },
+  "input": {
+    "placeholder": "اكتب رسالة...",
+    "send": "إرسال",
+    "sending": "جاري الإرسال..."
+  },
+  "conversation": {
+    "active": "نشط الآن",
+    "lastSeen": "آخر ظهور {time}",
+    "typing": "{name} يكتب الآن...",
+    "you": "أنت: {message}",
+    "read": "مقروءة",
+    "delivered": "تم التسليم",
+    "sent": "أُرسلت"
+  },
+  "group": {
+    "title": "محادثة جماعية",
+    "members": "{count, plural, =0 {أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}}",
+    "addMembers": "إضافة أعضاء",
+    "leave": "مغادرة المجموعة",
+    "name": "اسم المجموعة"
+  },
+  "media": {
+    "sendPhoto": "إرسال صورة",
+    "sendFile": "إرسال ملف"
+  }
+}

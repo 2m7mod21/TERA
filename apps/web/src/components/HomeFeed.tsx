@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useTransition, useEffect, useRef, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { createPortal } from "react-dom";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toggleReaction } from "@/server/actions/posts";
@@ -26,29 +27,47 @@ import {
 import ReactionsModal from "./ReactionsModal";
 import ReportModal from "@/components/ReportModal";
 
-
-
 const VISIBILITY_ICONS: Record<string, React.ReactNode> = {
   PUBLIC:    <Globe className="w-3 h-3" />,
   FRIENDS:   <Users2 className="w-3 h-3" />,
   PRIVATE:   <Lock className="w-3 h-3" />,
 };
 
-function timeAgo(date: Date | string) {
+function timeAgo(date: Date | string, tCommon: any) {
   const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
+  if (diff < 60) return tCommon("time.justNow");
+  if (diff < 3600) {
+    const mins = Math.floor(diff / 60);
+    return tCommon("time.minutesAgo", { count: mins });
+  }
+  if (diff < 86400) {
+    const hours = Math.floor(diff / 3600);
+    return tCommon("time.hoursAgo", { count: hours });
+  }
+  if (diff < 7 * 86400) {
+    const days = Math.floor(diff / 86400);
+    return tCommon("time.daysAgo", { count: days });
+  }
+  if (diff < 30 * 86400) {
+    const weeks = Math.floor(diff / (7 * 86400));
+    return tCommon("time.weeksAgo", { count: weeks });
+  }
+  if (diff < 365 * 86400) {
+    const months = Math.floor(diff / (30 * 86400));
+    return tCommon("time.monthsAgo", { count: months });
+  }
+  const years = Math.floor(diff / (365 * 86400));
+  return tCommon("time.yearsAgo", { count: years });
 }
 
 function ClientTime({ date }: { date: Date | string }) {
+  const tCommon = useTranslations("common");
   const [label, setLabel] = useState("");
   useEffect(() => {
-    setLabel(timeAgo(date));
-    const id = setInterval(() => setLabel(timeAgo(date)), 30_000);
+    setLabel(timeAgo(date, tCommon));
+    const id = setInterval(() => setLabel(timeAgo(date, tCommon)), 30_000);
     return () => clearInterval(id);
-  }, [date]);
+  }, [date, tCommon]);
   return <span suppressHydrationWarning>{label}</span>;
 }
 
@@ -91,6 +110,9 @@ export function CommentItem({
   depth?: number;
   onReplyClick?: (username: string, parentId: string) => void;
 }) {
+  const t = useTranslations("feed");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [showReplyBox, setShowReplyBox] = useState(false);
@@ -159,7 +181,7 @@ export function CommentItem({
   const displayName = comment.user?.profile?.displayName ?? "User";
 
   return (
-    <div className={`flex gap-2 ${depth > 0 ? "ml-8" : ""}`}>
+    <div className={`flex gap-2 ${depth > 0 ? "ms-8" : ""}`}>
       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 overflow-hidden flex-shrink-0 mt-0.5">
         {avatar
           ? <img src={avatar} className="w-full h-full object-cover" alt="" />
@@ -167,12 +189,12 @@ export function CommentItem({
       </div>
       <div className="flex-1 min-w-0">
         {deleted ? (
-          <p className="text-xs text-zinc-650 italic py-1">This comment was deleted.</p>
+          <p className="text-xs text-zinc-650 italic py-1">{t("comments.deletedComment")}</p>
         ) : (
           <>
             {comment.isPinned && (
               <div className="flex items-center gap-1 text-xs text-amber-400 mb-1">
-                <Pin className="w-3 h-3" /> Pinned comment
+                <Pin className="w-3 h-3" /> {t("comments.pinnedComment")}
               </div>
             )}
             <div className="bg-zinc-800/60 rounded-2xl rounded-tl-none px-3 py-2 text-sm inline-block max-w-full">
@@ -182,10 +204,10 @@ export function CommentItem({
                   <span className="text-blue-400 text-[11px]" title="Verified">✓</span>
                 )}
                 {comment.user?.isAdmin && (
-                  <span className="bg-amber-500/10 text-amber-400 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Admin">Admin</span>
+                  <span className="bg-amber-500/10 text-amber-400 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Admin">{tCommon("nav.admin")}</span>
                 )}
                 {comment.userId === postAuthorId && (
-                  <span className="bg-violet-500/20 text-violet-300 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Original Poster">OP</span>
+                  <span className="bg-violet-500/20 text-violet-300 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Original Poster">{t("comments.opLabel")}</span>
                 )}
               </div>
               {editing ? (
@@ -214,7 +236,7 @@ export function CommentItem({
               >
                 <Heart className={`w-3.5 h-3.5 ${myReaction?.type === "LOVE" ? "fill-rose-500 text-rose-500" : "text-zinc-500"}`} />
                 {optimisticReactions.length > 0 && (
-                  <span className="text-[10px] ml-0.5">{optimisticReactions.length}</span>
+                  <span className={`text-[10px] ${locale === "ar" ? "mr-0.5" : "ml-0.5"}`}>{optimisticReactions.length}</span>
                 )}
               </button>
 
@@ -231,28 +253,28 @@ export function CommentItem({
                 }}
                 className="hover:text-zinc-250 transition-colors font-medium"
               >
-                Reply
+                {t("comments.reply")}
               </button>
               {comment.userId === currentUserId && (
                 <>
-                  <button onClick={() => setEditing(true)} className="hover:text-violet-400">Edit</button>
-                  <button onClick={handleDelete} className="hover:text-rose-400">Delete</button>
+                  <button onClick={() => setEditing(true)} className="hover:text-violet-400">{tCommon("actions.edit")}</button>
+                  <button onClick={handleDelete} className="hover:text-rose-400">{tCommon("actions.delete")}</button>
                 </>
               )}
               {postAuthorId === currentUserId && depth === 0 && (
                 <button onClick={handlePin} className="hover:text-amber-400">
-                  {comment.isPinned ? "Unpin" : "Pin"}
+                  {comment.isPinned ? t("comments.unpin") : t("comments.pin")}
                 </button>
               )}
             </div>
 
             {/* Reply box */}
             {showReplyBox && depth === 0 && (
-              <form onSubmit={handleReply} className="flex gap-2 mt-2 ml-2">
+              <form onSubmit={handleReply} className="flex gap-2 mt-2 ms-2">
                 <input
                   value={replyText}
                   onChange={e => setReplyText(e.target.value)}
-                  placeholder="Write a reply..."
+                  placeholder={t("comments.writeReply")}
                   className="flex-1 bg-zinc-800 border border-zinc-700 focus:border-violet-500 rounded-2xl px-3 py-1.5 text-xs text-zinc-100 outline-none"
                   autoFocus
                 />
@@ -266,10 +288,10 @@ export function CommentItem({
             {localReplies.length > 0 && depth === 0 && (
               <button
                 onClick={() => setShowReplies(v => !v)}
-                className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 mt-1 ml-2"
+                className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 mt-1 ms-2"
               >
                 {showReplies ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                {showReplies ? "Hide" : "View"} {localReplies.length} {localReplies.length === 1 ? "reply" : "replies"}
+                {showReplies ? t("comments.hideReplies") : t("comments.viewReplies", { count: localReplies.length })}
               </button>
             )}
             {showReplies && localReplies.map((r: any) => (
@@ -305,6 +327,8 @@ function CommentPanel({
   initialComments: any[];
   currentUserId: string;
 }) {
+  const t = useTranslations("feed");
+  const tCommon = useTranslations("common");
   const [comments, setComments] = useState<any[]>(initialComments ?? []);
   const [commentText, setCommentText] = useState("");
   const [sortBy, setSortBy] = useState<"relevant" | "newest">("relevant");
@@ -341,25 +365,25 @@ function CommentPanel({
     <div className="border-t border-zinc-800/60 px-4 pt-3 pb-2">
       {/* Sort bar */}
       <div className="flex items-center gap-3 mb-3">
-        <p className="text-xs font-semibold text-zinc-400">Comments</p>
-        <div className="flex gap-1 ml-auto">
+        <p className="text-xs font-semibold text-zinc-400">{t("comments.title")}</p>
+        <div className="flex gap-1 ms-auto">
           {(["relevant", "newest"] as const).map(s => (
             <button
               key={s}
               onClick={() => handleSortChange(s)}
               className={`text-xs px-2 py-0.5 rounded-lg transition-all ${sortBy === s ? "bg-violet-600/30 text-violet-400" : "text-zinc-600 hover:text-zinc-400"}`}
             >
-              {s === "relevant" ? "Top" : "Newest"}
+              {s === "relevant" ? t("comments.top") : t("comments.newest")}
             </button>
           ))}
         </div>
       </div>
 
       {/* Comment list */}
-      <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+      <div className="space-y-3 max-h-72 overflow-y-auto pe-1">
         {loading && <div className="flex justify-center py-2"><Loader2 className="w-4 h-4 animate-spin text-violet-400" /></div>}
         {!loading && comments.length === 0 && (
-          <p className="text-center text-zinc-600 text-xs py-4">Be the first to comment!</p>
+          <p className="text-center text-zinc-600 text-xs py-4">{t("comments.empty")}</p>
         )}
         {comments.map((c: any) => (
           <CommentItem key={c.id} comment={c} currentUserId={currentUserId} postAuthorId={postAuthorId} />
@@ -372,7 +396,7 @@ function CommentPanel({
         <input
           value={commentText}
           onChange={e => setCommentText(e.target.value)}
-          placeholder="Write a comment…"
+          placeholder={t("comments.writeComment")}
           className="flex-1 bg-zinc-900 border border-zinc-700 focus:border-violet-500 rounded-2xl px-3.5 py-2 text-sm text-zinc-100 outline-none transition-all"
         />
         <button type="submit" disabled={!commentText.trim()} className="gradient-btn px-3 py-2 rounded-xl text-white disabled:opacity-40">
@@ -385,6 +409,7 @@ function CommentPanel({
 
 // ─── Share Menu ────────────────────────────────────────────────────────────────
 function ShareMenu({ post, onClose }: { post: any; onClose: () => void }) {
+  const t = useTranslations("feed");
   const [shared, setShared] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -402,20 +427,20 @@ function ShareMenu({ post, onClose }: { post: any; onClose: () => void }) {
   };
 
   return (
-    <div className="absolute bottom-full left-0 mb-2 w-52 glass rounded-2xl border border-zinc-700 shadow-2xl z-50 overflow-hidden scale-in">
+    <div className="absolute bottom-full inset-inline-start-0 mb-2 w-52 glass rounded-2xl border border-zinc-700 shadow-2xl z-50 overflow-hidden scale-in">
       <button
         onClick={handleShareNow}
         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors"
       >
         {shared ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4 text-violet-400" />}
-        {shared ? "Shared!" : "Share to Feed"}
+        {shared ? t("post.shared") : t("post.shareToFeed")}
       </button>
       <button
         onClick={handleCopyLink}
         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors"
       >
         {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-        {copied ? "Link copied!" : "Copy Link"}
+        {copied ? t("post.linkCopied") : t("post.copyLink")}
       </button>
     </div>
   );
@@ -441,6 +466,9 @@ function OverflowMenu({
   onReportClick: () => void;
   menuRect: DOMRect | null;
 }) {
+  const t = useTranslations("feed");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const isAuthor = post.userId === currentUserId;
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content ?? "");
@@ -459,7 +487,7 @@ function OverflowMenu({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) return;
+    if (!confirm(t("post.confirmDeleteText"))) return;
     const { deletePost } = await import("@/server/actions/posts");
     const res = await deletePost(post.id);
     if (res.success) { onDeleted(); onClose(); }
@@ -479,6 +507,11 @@ function OverflowMenu({
   };
 
   if (editing && menuRect && typeof document !== 'undefined') {
+    const inlineOffsetKey = locale === 'ar' ? 'right' : 'left';
+    const inlineOffsetVal = locale === 'ar'
+      ? Math.max(16, window.innerWidth - menuRect.left - 288)
+      : Math.max(16, menuRect.right - 288);
+
     return createPortal(
       <>
         <div className="fixed inset-0 z-[110]" onMouseDown={onClose} />
@@ -486,14 +519,14 @@ function OverflowMenu({
           style={{
             position: 'fixed',
             top: menuRect.bottom + 4,
-            left: Math.max(16, menuRect.right - 288),
+            [inlineOffsetKey]: inlineOffsetVal,
             zIndex: 111,
           }}
-          className="w-72 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 text-left overflow-hidden scale-in"
+          className={`w-72 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 overflow-hidden scale-in ${locale === 'ar' ? 'text-right' : 'text-left'}`}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <p className="text-xs font-semibold text-zinc-300 mb-2">Edit post</p>
+          <p className="text-xs font-semibold text-zinc-300 mb-2">{t("post.editPost")}</p>
           <form onSubmit={handleEditSubmit}>
             <textarea
               value={editText}
@@ -503,8 +536,8 @@ function OverflowMenu({
               autoFocus
             />
             <div className="flex gap-2 mt-2 justify-end">
-              <button type="button" onClick={() => setEditing(false)} className="text-xs text-zinc-400 px-3 py-1.5 rounded-lg hover:bg-zinc-800">Cancel</button>
-              <button type="submit" className="gradient-btn text-xs text-white px-3 py-1.5 rounded-lg">Save</button>
+              <button type="button" onClick={() => setEditing(false)} className="text-xs text-zinc-400 px-3 py-1.5 rounded-lg hover:bg-zinc-800">{tCommon("actions.cancel")}</button>
+              <button type="submit" className="gradient-btn text-xs text-white px-3 py-1.5 rounded-lg">{t("post.saveBtn")}</button>
             </div>
           </form>
         </div>
@@ -513,6 +546,11 @@ function OverflowMenu({
     );
   }
 
+  const inlineOffsetKey = locale === 'ar' ? 'right' : 'left';
+  const inlineOffsetVal = locale === 'ar'
+    ? Math.max(16, window.innerWidth - menuRect!.left - 208)
+    : Math.max(16, menuRect!.right - 208);
+
   return menuRect && typeof document !== 'undefined' ? createPortal(
     <>
       <div className="fixed inset-0 z-[110]" onMouseDown={onClose} />
@@ -520,34 +558,34 @@ function OverflowMenu({
         style={{
           position: 'fixed',
           top: menuRect.bottom + 4,
-          left: Math.max(16, menuRect.right - 208),
+          [inlineOffsetKey]: inlineOffsetVal,
           zIndex: 111,
         }}
-        className="w-52 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1 text-left overflow-hidden animate-fade-in"
+        className={`w-52 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl py-1 overflow-hidden animate-fade-in ${locale === 'ar' ? 'text-right' : 'text-left'}`}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <button onClick={handleCopy} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
           {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
-          {linkCopied ? "Link copied!" : "Copy Link"}
+          {linkCopied ? t("post.linkCopied") : t("post.copyLink")}
         </button>
         {!isAuthor && (
           <>
             <button onClick={handleHide} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
-              <EyeOff className="w-3.5 h-3.5 text-zinc-400" /> Hide Post
+              <EyeOff className="w-3.5 h-3.5 text-zinc-400" /> {t("post.hidePost")}
             </button>
             <button onClick={handleReport} className="flex items-center gap-3 w-full px-4 py-2.5 text-[11px] text-rose-400 hover:bg-zinc-800 transition-colors">
-              <Flag className="w-3.5 h-3.5" /> Report Post
+              <Flag className="w-3.5 h-3.5" /> {t("post.reportPost")}
             </button>
           </>
         )}
         {isAuthor && (
           <>
             <button onClick={() => setEditing(true)} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-zinc-300 hover:bg-zinc-800 transition-colors">
-              <Edit3 className="w-3.5 h-3.5 text-violet-400" /> Edit Post
+              <Edit3 className="w-3.5 h-3.5 text-violet-400" /> {t("post.editPost")}
             </button>
             <button onClick={handleDelete} className="flex items-center gap-3 w-full px-4 py-2.5 text-xs text-rose-400 hover:bg-zinc-800 transition-colors">
-              <Trash2 className="w-3.5 h-3.5" /> Delete Post
+              <Trash2 className="w-3.5 h-3.5" /> {t("post.deletePost")}
             </button>
           </>
         )}
@@ -566,6 +604,9 @@ export function PostCard({
   currentUserId: string;
   onCommentClick?: (postId: string) => void;
 }) {
+  const t = useTranslations("feed");
+  const tCommon = useTranslations("common");
+
   const displayPost = (post.type === "REPOST" && !post.content && post.parentPost)
     ? post.parentPost
     : post;
@@ -718,12 +759,12 @@ export function PostCard({
   if (hidden || deleted) return null;
 
   return (
-    <article ref={cardRef} className="glass-light rounded-2xl overflow-hidden mb-3 card-hover fade-in border border-white/[0.04] hover:border-violet-500/20 transition-colors relative">
+    <article ref={cardRef} className="glass-light rounded-2xl overflow-hidden mb-3 card-hover fade-in border border-white/[0.04] hover:border-violet-500/20 transition-colors relative text-start">
       {/* Repost attribution header */}
       {post.type === "REPOST" && !post.content && (
         <div className="flex items-center gap-1.5 px-4 pt-3 pb-1 text-xs text-zinc-500 font-medium border-b border-white/[0.02] bg-white/[0.01]">
           <Repeat2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span>{post.user?.profile?.displayName ?? "Someone"} reposted</span>
+          <span>{t("post.reposted", { name: post.user?.profile?.displayName ?? "Someone" })}</span>
         </div>
       )}
 
@@ -731,7 +772,7 @@ export function PostCard({
       <div className="flex items-center justify-between p-4 pb-3">
         <div className="flex items-center gap-3">
           <Link href={`/${username}`}>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden ring-2 ring-transparent hover:ring-violet-500/50 transition-all">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden ring-2 ring-transparent ring-offset-zinc-950 ring-offset-2 hover:ring-violet-500/50 transition-all">
               {avatar
                 ? <img src={avatar} alt={displayName} className="w-full h-full object-cover" />
                 : <span className="w-full h-full flex items-center justify-center text-white font-bold text-sm">{displayName[0]}</span>}
@@ -744,13 +785,13 @@ export function PostCard({
               </Link>
               {displayPost.user?.verifiedBadge && <span className="text-blue-400 text-xs">✓</span>}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5">
-              <ClientTime date={displayPost.createdAt} /> ago
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5 whitespace-nowrap overflow-x-auto max-w-full">
+              <ClientTime date={displayPost.createdAt} />
               <span className="text-zinc-700">·</span>
               {VISIBILITY_ICONS[displayPost.visibility ?? "PUBLIC"]}
-              {displayPost.isEdited && <span className="text-zinc-600 italic">· edited</span>}
+              {displayPost.isEdited && <span className="text-zinc-600 italic">· {t("post.edited")}</span>}
               {displayPost.location && <span className="text-zinc-500">· 📍 {displayPost.location}</span>}
-              {displayPost.feeling && <span className="text-zinc-500">· 😊 feeling {displayPost.feeling}</span>}
+              {displayPost.feeling && <span className="text-zinc-500">· 😊 {t("post.feeling", { feeling: t(`composer.feelings.${displayPost.feeling}`) })}</span>}
             </div>
           </div>
         </div>
@@ -758,6 +799,7 @@ export function PostCard({
         <div className="flex items-center gap-1">
           <button
             onClick={handleSave}
+            title={isSaved ? t("post.unsave") : t("post.save")}
             className={`w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-zinc-800 ${isSaved ? "text-violet-400" : "text-zinc-500"}`}
           >
             <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
@@ -798,7 +840,7 @@ export function PostCard({
           </p>
           {isLong && (
             <button onClick={() => setExpanded(v => !v)} className="text-violet-400 text-xs hover:underline mt-1">
-              {expanded ? "See less" : "See more"}
+              {expanded ? tCommon("actions.seeLess") : tCommon("actions.seeMore")}
             </button>
           )}
         </div>
@@ -840,7 +882,7 @@ export function PostCard({
             return (
               <div key={opt.id} className="relative h-9 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 cursor-pointer group"
                 onClick={async () => { const { votePoll } = await import("@/server/actions/posts"); await votePoll(opt.id); }}>
-                <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${voted ? "gradient-btn opacity-40" : "bg-violet-500/20"}`} style={{ width: `${pct}%` }} />
+                <div className={`absolute inset-y-0 inset-inline-start-0 transition-all duration-700 ${voted ? "gradient-btn opacity-40" : "bg-violet-500/20"}`} style={{ width: `${pct}%` }} />
                 <div className="relative z-10 flex justify-between items-center h-full px-3">
                   <span className="text-sm text-zinc-200 flex items-center gap-1.5">
                     {voted && <Check className="w-3 h-3 text-violet-400" />}{opt.text}
@@ -850,7 +892,7 @@ export function PostCard({
               </div>
             );
           })}
-          <p className="text-xs text-zinc-600">{displayPost.poll.options?.reduce((s: number, o: any) => s + o.votes.length, 0)} votes</p>
+          <p className="text-xs text-zinc-650">{t("post.votes", { count: displayPost.poll.options?.reduce((s: number, o: any) => s + o.votes.length, 0) })}</p>
         </div>
       )}
 
@@ -872,8 +914,8 @@ export function PostCard({
 
       {/* Engagement summary */}
       {(totalReactions > 0 || (displayPost._count?.comments ?? initialComments.length) > 0 || (displayPost.viewCount ?? 0) > 0 || sharesCount > 0) && (
-        <div className="px-4 py-2 flex items-center justify-between border-t border-zinc-800/30">
-          <div className="flex items-center gap-1.5">
+        <div className="px-4 py-2 flex items-center justify-between border-t border-zinc-800/30 text-xs text-zinc-650">
+          <div className="flex items-center gap-1.5 font-medium/60 text-zinc-500">
             {totalReactions > 0 && (
               <button onClick={() => setShowReactionsModal(true)} className="flex items-center gap-1.5 hover:text-rose-400 transition-colors" title="View Reactors">
                 <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
@@ -884,13 +926,13 @@ export function PostCard({
           <div className="flex items-center gap-3 text-xs text-zinc-600">
             {(displayPost._count?.comments ?? initialComments.length) > 0 && (
               <button onClick={() => setShowComments(v => !v)} className="hover:text-zinc-400">
-                {displayPost._count?.comments ?? initialComments.length} comments
+                {t("post.commentsCount", { count: displayPost._count?.comments ?? initialComments.length })}
               </button>
             )}
             {(displayPost.viewCount ?? 0) > 0 && (
-              <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {displayPost.viewCount} views</span>
+              <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {t("post.views", { count: displayPost.viewCount })}</span>
             )}
-            {sharesCount > 0 && <span>{sharesCount} reposts</span>}
+            {sharesCount > 0 && <span>{t("post.repostsCount", { count: sharesCount })}</span>}
           </div>
         </div>
       )}
@@ -905,7 +947,7 @@ export function PostCard({
           {myReaction
             ? <Heart className="w-5 h-5 fill-rose-500 text-rose-500 animate-heartbeat" />
             : <Heart className="w-5 h-5 text-zinc-500 transition-transform duration-200 group-hover:scale-110" />}
-          <span>{myReaction ? "Loved" : "Love"}</span>
+          <span>{myReaction ? t("post.loved") : t("post.love")}</span>
         </button>
 
         {/* Comment */}
@@ -914,7 +956,7 @@ export function PostCard({
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all"
         >
           <MessageSquare className="w-4 h-4" />
-          <span>Comment</span>
+          <span>{tCommon("actions.comment")}</span>
         </button>
 
         {/* Repost */}
@@ -928,7 +970,7 @@ export function PostCard({
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:bg-zinc-800 group ${isReposted ? "text-emerald-500" : "text-zinc-500 hover:text-zinc-200"}`}
         >
           <Repeat2 className={`w-5 h-5 ${isReposted ? "text-emerald-500" : "transition-transform duration-300 group-hover:rotate-180"}`} />
-          <span>Repost</span>
+          <span>{t("post.repost")}</span>
         </button>
 
         {/* Share */}
@@ -938,7 +980,7 @@ export function PostCard({
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all"
           >
             <Send className="w-4 h-4" />
-            <span>Share</span>
+            <span>{tCommon("actions.share")}</span>
           </button>
           {showShare && <ShareMenu post={displayPost} onClose={() => setShowShare(false)} />}
         </div>
@@ -1005,23 +1047,23 @@ export function PostCard({
           onMouseDown={() => setShowQuoteModal(false)}
         >
           <div
-            className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-3xl p-5 shadow-2xl"
+            className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-3xl p-5 shadow-2xl text-start"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-zinc-100 mb-3">Quote Post</h3>
+            <h3 className="text-base font-bold text-zinc-100 mb-3">{t("post.quotePost")}</h3>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <textarea
                 value={quoteText}
                 onChange={e => setQuoteText(e.target.value)}
-                placeholder="Add your thoughts..."
+                placeholder={t("post.addThoughts")}
                 className="w-full h-24 bg-zinc-900 border border-zinc-800 focus:border-violet-500 rounded-xl p-3 text-sm text-zinc-100 outline-none resize-none"
                 autoFocus
               />
               <div className="flex justify-end gap-2.5">
-                <button type="button" onClick={() => setShowQuoteModal(false)} className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors">Cancel</button>
+                <button type="button" onClick={() => setShowQuoteModal(false)} className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors">{tCommon("actions.cancel")}</button>
                 <button type="submit" disabled={!quoteText.trim() || submittingQuote} className="gradient-btn px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-40">
-                  {submittingQuote ? "Quoting…" : "Post"}
+                  {submittingQuote ? t("post.quoting") : t("composer.button")}
                 </button>
               </div>
             </form>
@@ -1036,7 +1078,7 @@ export function PostCard({
           contentType="POST"
           contentId={displayPost.id}
           reportedUserId={displayPost.userId}
-          contentLabel="Post"
+          contentLabel={tCommon("counts.posts", { count: 1 })}
           onClose={() => setReportOpen(false)}
         />,
         document.body

@@ -1,0 +1,54 @@
+{
+  "title": "Explorer",
+  "search": {
+    "placeholder": "Rechercher des personnes, publications, hashtags...",
+    "results": "Résultats de recherche pour \"{query}\"",
+    "noResults": "Aucun résultat pour \"{query}\"",
+    "people": "Personnes",
+    "posts": "Publications",
+    "hashtags": "Hashtags",
+    "all": "Tout"
+  },
+  "trending": {
+    "title": "Tendances",
+    "posts": "{count, plural, one {# publication} other {# publications}}"
+  },
+  "suggested": {
+    "title": "Suggéré pour vous",
+    "peopleToFollow": "Personnes à suivre",
+    "peopleYouMayKnow": "Personnes que vous connaissez peut-être",
+    "seeAll": "Voir tout",
+    "mutuals": "{count, plural, one {# ami commun} other {# amis communs}}",
+    "suggestedForYou": "Suggéré pour vous"
+  },
+  "follow": {
+    "follow": "Suivre",
+    "following": "Abonné",
+    "activeNow": "Actifs maintenant"
+  },
+  "sponsored": {
+    "label": "Sponsorisé",
+    "title": "TERA Premium Pro",
+    "description": "Débloquez des thèmes exclusifs, des réacteurs animés et des stickers de story personnalisés avec TERA Premium !",
+    "cta": "Passer à Premium"
+  },
+  "footer": {
+    "links": "Confidentialité · Conditions · Publicité · Cookies",
+    "copyright": "© 2025 Plateforme Sociale TERA"
+  },
+  "categories": {
+    "all": "Tout",
+    "photos": "Photos",
+    "videos": "Vidéos",
+    "news": "Actualités",
+    "sports": "Sports",
+    "entertainment": "Divertissements",
+    "technology": "Technologie"
+  },
+  "filter": {
+    "title": "Filtrer",
+    "recent": "Plus récent",
+    "popular": "Plus populaire",
+    "relevance": "Plus pertinent"
+  }
+}

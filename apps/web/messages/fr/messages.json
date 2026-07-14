@@ -1,0 +1,35 @@
+{
+  "title": "Messages",
+  "newMessage": "Nouveau message",
+  "search": "Rechercher des conversations...",
+  "empty": {
+    "title": "Aucun message",
+    "subtitle": "Commencez une conversation",
+    "start": "Envoyer un message"
+  },
+  "input": {
+    "placeholder": "Écrire un message...",
+    "send": "Envoyer",
+    "sending": "Envoi..."
+  },
+  "conversation": {
+    "active": "En ligne",
+    "lastSeen": "Vu {time}",
+    "typing": "{name} écrit...",
+    "you": "Vous: {message}",
+    "read": "Lu",
+    "delivered": "Délivré",
+    "sent": "Envoyé"
+  },
+  "group": {
+    "title": "Discussion de groupe",
+    "members": "{count, plural, one {# membre} other {# membres}}",
+    "addMembers": "Ajouter des membres",
+    "leave": "Quitter le groupe",
+    "name": "Nom du groupe"
+  },
+  "media": {
+    "sendPhoto": "Envoyer une photo",
+    "sendFile": "Envoyer un fichier"
+  }
+}

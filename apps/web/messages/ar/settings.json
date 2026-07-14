@@ -1,0 +1,67 @@
+{
+  "title": "الإعدادات",
+  "sections": {
+    "account": "الحساب",
+    "privacy": "الخصوصية والسلامة",
+    "notifications": "الإشعارات",
+    "appearance": "المظهر",
+    "security": "الأمان",
+    "language": "اللغة والمنطقة",
+    "monetization": "تحقيق الأرباح",
+    "connected": "التطبيقات المتصلة",
+    "data": "البيانات والنشاط",
+    "help": "المساعدة والدعم"
+  },
+  "account": {
+    "editProfile": "تعديل الملف الشخصي",
+    "changePassword": "تغيير كلمة المرور",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "username": "اسم المستخدم",
+    "displayName": "الاسم الظاهر",
+    "bio": "النبذة التعريفية",
+    "website": "الموقع الإلكتروني",
+    "location": "الموقع الجغرافي",
+    "birthdate": "تاريخ الميلاد",
+    "deactivate": "تعطيل الحساب",
+    "delete": "حذف الحساب"
+  },
+  "privacy": {
+    "profileVisibility": "رؤية الملف الشخصي",
+    "public": "عام",
+    "friends": "الأصدقاء فقط",
+    "private": "خاص",
+    "whoCanMessage": "من يمكنه مراسلتك",
+    "whoCanFollow": "من يمكنه متابعتك",
+    "showActivity": "عرض حالة النشاط",
+    "blockedUsers": "المستخدمون المحظورون"
+  },
+  "notifications": {
+    "push": "إشعارات الهاتف",
+    "email": "إشعارات البريد الإلكتروني",
+    "likes": "الإعجابات",
+    "comments": "التعليقات",
+    "follows": "المتابعون الجدد",
+    "mentions": "الإشارات",
+    "messages": "الرسائل",
+    "marketing": "تحديثات المنتج"
+  },
+  "appearance": {
+    "theme": "المظهر",
+    "language": "اللغة",
+    "fontSize": "حجم الخط",
+    "colorScheme": "مخطط الألوان"
+  },
+  "security": {
+    "twoFactor": "المصادقة الثنائية",
+    "twoFactorEnabled": "المصادقة الثنائية مفعلة",
+    "twoFactorDisabled": "المصادقة الثنائية معطلة",
+    "enable": "تفعيل",
+    "disable": "تعطيل",
+    "activeSessions": "الجلسات النشطة",
+    "logOutAll": "تسجيل الخروج من جميع الأجهزة"
+  },
+  "save": "حفظ التغييرات",
+  "saved": "تم حفظ التغييرات!",
+  "saving": "جاري الحفظ..."
+}

@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { 
-  Plus, X, ChevronLeft, ChevronRight, Loader2, Globe, Users, Eye, Send, Archive, 
-  Smile, Type, Palette, Sparkles, Image as ImageIcon, Video, Star, MoreVertical,
-  Check, Trash2, Award, Zap, HelpCircle, MapPin
+  Plus, X, Loader2, Users, Eye, Send, Archive, 
+  Smile, Type, Palette, Sparkles, Image as ImageIcon, Star,
+  MapPin
 } from "lucide-react";
 import { 
   createStory, createTextStory, markStoryViewed, getStoryViewers, archiveStory, 
@@ -29,6 +30,8 @@ interface Story {
   viewed?: boolean;
   isOwn?: boolean;
   myReaction?: string | null;
+  viewCount?: number;
+  expiresAt?: string;
 }
 
 interface StickerItem {
@@ -84,6 +87,8 @@ function StoryViewer({
   currentUser: any;
   onClose: () => void;
 }) {
+  const t = useTranslations("feed");
+  const locale = useLocale();
   const [idx, setIdx] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -95,7 +100,7 @@ function StoryViewer({
   const [localStories, setLocalStories] = useState<Story[]>(stories);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const DURATION = 6500;
-  const TICK = 60;
+  const TICK = 65;
 
   const story = localStories[idx];
   const isOwn = story?.userId === currentUser?.id;
@@ -175,7 +180,6 @@ function StoryViewer({
     goNext();
   };
 
-  // Sticker interactions
   const handleVote = (stickerId: string, optionIdx: number) => {
     if (!currentUser?.id || !story) return;
     setLocalStories(prev => prev.map((s, sIdx) => {
@@ -185,7 +189,6 @@ function StoryViewer({
         const votes = { ...st.votes, [currentUser.id]: optionIdx };
         return { ...st, votes };
       });
-      // Optionally save to backend using dynamic updates
       return { ...s, stickers: updatedStickers };
     }));
   };
@@ -224,9 +227,11 @@ function StoryViewer({
                   )}
                 </div>
               </div>
-              <div className="text-left">
+              <div className="text-start">
                 <p className="font-bold text-white text-sm leading-tight drop-shadow-md">{story.user.profile.displayName}</p>
-                <p className="text-white/50 text-[10px] uppercase font-bold tracking-wider">{story.audience ?? "PUBLIC"}</p>
+                <p className="text-white/50 text-[10px] uppercase font-bold tracking-wider">
+                  {story.audience === "FOLLOWERS" ? t("stories.followers") : t("stories.public")}
+                </p>
               </div>
             </div>
 
@@ -254,7 +259,6 @@ function StoryViewer({
           onPointerDown={() => setPaused(true)}
           onPointerUp={() => setPaused(false)}
         >
-          {/* Main Content */}
           {story.type === "TEXT" ? (
             <div className={`w-full h-full bg-gradient-to-tr ${story.textStyle?.bg ?? "from-zinc-900 to-zinc-950"} flex items-center justify-center p-8`}>
               <p className={`text-center ${story.textStyle?.font ?? "font-sans"} text-3xl leading-snug drop-shadow-md font-bold`} style={{ color: story.textStyle?.color ?? "#ffffff" }}>
@@ -267,7 +271,6 @@ function StoryViewer({
             <img src={story.mediaUrl ?? undefined} alt="" className="w-full h-full object-cover" />
           )}
 
-          {/* Stickers rendering */}
           {story.stickers?.map((st) => {
             if (st.type === "DRAWING" && st.dataUrl) {
               return (
@@ -280,7 +283,6 @@ function StoryViewer({
               );
             }
 
-            // Interactive Stickers
             return (
               <div
                 key={st.id}
@@ -309,30 +311,30 @@ function StoryViewer({
 
                 {st.type === "POLL" && (
                   <div className="glass-dark border border-white/20 p-3 rounded-2xl w-48 shadow-xl text-center">
-                    <p className="text-white text-xs font-bold mb-2 text-shadow">{st.text || "Poll"}</p>
+                    <p className="text-white text-xs font-bold mb-2 text-shadow">{st.text || t("stories.stickerTypes.poll")}</p>
                     <div className="flex gap-2">
-                      {st.options?.map((opt, oIdx) => {
-                        const votes = st.votes ?? {};
-                        const total = Object.keys(votes).length;
-                        const mine = currentUser?.id ? votes[currentUser.id] === oIdx : false;
-                        const count = Object.values(votes).filter(v => v === oIdx).length;
-                        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                       {st.options?.map((opt, oIdx) => {
+                         const votes = st.votes ?? {};
+                         const total = Object.keys(votes).length;
+                         const mine = currentUser?.id ? votes[currentUser.id] === oIdx : false;
+                         const count = Object.values(votes).filter(v => v === oIdx).length;
+                         const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
 
-                        return (
-                          <button
-                            key={oIdx}
-                            onClick={() => handleVote(st.id, oIdx)}
-                            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all relative overflow-hidden ${
-                              mine ? "bg-white text-zinc-950" : "bg-white/10 text-white hover:bg-white/20"
-                            }`}
-                          >
-                            {total > 0 && (
-                              <div className="absolute inset-y-0 left-0 bg-white/20 transition-all pointer-events-none" style={{ width: `${percentage}%` }} />
-                            )}
-                            <span className="relative z-10">{opt} {total > 0 ? `${percentage}%` : ""}</span>
-                          </button>
-                        );
-                      })}
+                         return (
+                           <button
+                             key={oIdx}
+                             onClick={() => handleVote(st.id, oIdx)}
+                             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all relative overflow-hidden ${
+                               mine ? "bg-white text-zinc-950" : "bg-white/10 text-white hover:bg-white/20"
+                             }`}
+                           >
+                             {total > 0 && (
+                               <div className="absolute inset-y-0 inset-inline-start-0 bg-white/20 transition-all pointer-events-none" style={{ width: `${percentage}%` }} />
+                             )}
+                             <span className="relative z-10">{opt} {total > 0 ? `${percentage}%` : ""}</span>
+                           </button>
+                         );
+                       })}
                     </div>
                   </div>
                 )}
@@ -340,12 +342,12 @@ function StoryViewer({
                 {st.type === "QUESTION" && (
                   <div className="bg-white border rounded-2xl w-48 shadow-2xl p-2.5 text-center">
                     <div className="bg-gradient-to-tr from-pink-500 to-violet-650 text-white text-[10px] font-black rounded-lg py-1 mb-2 uppercase tracking-wide">
-                      Ask me anything
+                      {t("stories.askMeAnything")}
                     </div>
-                    <p className="text-zinc-800 text-xs font-bold mb-2">{st.text || "Type your question..."}</p>
+                    <p className="text-zinc-800 text-xs font-bold mb-2">{st.text || t("stories.typeSomething")}</p>
                     <input 
                       type="text" 
-                      placeholder="Type something..." 
+                      placeholder={t("stories.typeSomething")} 
                       className="w-full bg-zinc-100 text-zinc-900 placeholder:text-zinc-400 text-xs rounded-xl px-2.5 py-1.5 border-0 focus:ring-1 focus:ring-violet-500 outline-none"
                     />
                   </div>
@@ -354,7 +356,6 @@ function StoryViewer({
             );
           })}
 
-          {/* Quick Reaction Flying Animation */}
           {reacted && (
             <div className="absolute inset-0 flex items-center justify-center z-[100] pointer-events-none">
               <span className="text-8xl animate-ping opacity-75">{reacted}</span>
@@ -362,9 +363,9 @@ function StoryViewer({
           )}
         </div>
 
-        {/* Navigation tap overlays */}
-        <div className="absolute inset-y-0 left-0 w-1/4 z-30 cursor-pointer" onClick={goPrev} />
-        <div className="absolute inset-y-0 right-0 w-1/4 z-30 cursor-pointer" onClick={goNext} />
+        {/* Navigation tap overlays (localized direction-aware) */}
+        <div className={`absolute inset-y-0 ${locale === 'ar' ? 'right-0' : 'left-0'} w-1/4 z-30 cursor-pointer`} onClick={goPrev} />
+        <div className={`absolute inset-y-0 ${locale === 'ar' ? 'left-0' : 'right-0'} w-1/4 z-30 cursor-pointer`} onClick={goNext} />
 
         {/* Bottom Panel */}
         <div className="px-4 pb-6 pt-4 bg-gradient-to-t from-black via-black/40 to-transparent z-40">
@@ -389,7 +390,7 @@ function StoryViewer({
                   type="text"
                   value={replyText}
                   onChange={e => setReplyText(e.target.value)}
-                  placeholder={`Send reply to ${story.user.profile.username}…`}
+                  placeholder={t("stories.sendReply", { username: story.user.profile.username })}
                   className="flex-1 bg-white/10 border border-white/20 focus:border-white/40 rounded-full px-4 py-2.5 text-xs text-white placeholder:text-white/40 outline-none"
                 />
                 <button
@@ -405,9 +406,9 @@ function StoryViewer({
 
           {isOwn && (
             <div className="text-center text-white/50 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-1.5">
-              <span>{story.viewCount} views</span>
+              <span>{t("stories.views", { count: story.viewCount ?? 0 })}</span>
               <span>•</span>
-              <span>Expires {new Date(story.expiresAt || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>{t("stories.expiresAt", { time: new Date(story.expiresAt || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}</span>
             </div>
           )}
         </div>
@@ -418,12 +419,15 @@ function StoryViewer({
         <div className="absolute inset-0 bg-black/75 z-[400] flex items-end justify-center" onClick={() => { setShowViewers(false); setPaused(false); }}>
           <div className="w-full max-w-md bg-zinc-900 rounded-t-3xl p-5 max-h-[60vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h4 className="font-bold text-white text-md flex items-center gap-1.5"><Eye className="w-4 h-4 text-violet-400" /> Story Viewers ({viewers.length})</h4>
+              <h4 className="font-bold text-white text-md flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-violet-400" />
+                {t("stories.viewers", { count: viewers.length })}
+              </h4>
               <button onClick={() => { setShowViewers(false); setPaused(false); }} className="p-1 rounded-full bg-zinc-800 text-zinc-400"><X className="w-4 h-4" /></button>
             </div>
             {viewerLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-violet-500" /></div>}
             {!viewerLoading && viewers.length === 0 && (
-              <p className="text-zinc-550 text-xs text-center py-8 font-medium">No views yet. Share this story to start gaining reach!</p>
+              <p className="text-zinc-550 text-xs text-center py-8 font-medium">{t("stories.noViewers")}</p>
             )}
             <div className="space-y-3.5">
               {viewers.map(v => (
@@ -456,6 +460,7 @@ function DrawCanvas({
   onSave: (dataUrl: string) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("feed");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
   const [color, setColor] = useState("#a855f7"); // purple default
@@ -483,8 +488,8 @@ function DrawCanvas({
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    ctx.beginPath();
     ctx.moveTo(x, y);
+    ctx.beginPath();
 
     // Apply brush properties
     ctx.strokeStyle = color;
@@ -531,22 +536,22 @@ function DrawCanvas({
     <div className="absolute inset-0 z-50 flex flex-col justify-between bg-black/80">
       <div className="flex justify-between items-center p-3 bg-zinc-950/70 backdrop-blur z-20">
         <div className="flex gap-2">
-          {(["pen", "neon", "highlighter"] as const).map(t => (
+          {(["pen", "neon", "highlighter"] as const).map(brush => (
             <button
-              key={t}
-              onClick={() => setBrushType(t)}
+              key={brush}
+              onClick={() => setBrushType(brush)}
               className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${
-                brushType === t ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-350 hover:bg-zinc-700"
+                brushType === brush ? "bg-white text-zinc-900" : "bg-zinc-800 text-zinc-350 hover:bg-zinc-700"
               }`}
             >
-              {t}
+              {t(`stories.drawing.${brush}`)}
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5">
-          <button onClick={handleClear} className="px-2.5 py-1 text-[10px] bg-red-600 rounded-xl text-white font-bold">Clear</button>
-          <button onClick={handleSaveAction} className="px-2.5 py-1 text-[10px] bg-green-500 rounded-xl text-white font-bold">Save</button>
-          <button onClick={onCancel} className="px-2.5 py-1 text-[10px] bg-zinc-800 rounded-xl text-white font-bold">Cancel</button>
+        <div className="flex gap-1.5 font-bold">
+          <button onClick={handleClear} className="px-2.5 py-1 text-[10px] bg-red-650 rounded-xl text-white">{t("stories.drawing.clear")}</button>
+          <button onClick={handleSaveAction} className="px-2.5 py-1 text-[10px] bg-green-500 rounded-xl text-white">{t("stories.drawing.save")}</button>
+          <button onClick={onCancel} className="px-2.5 py-1 text-[10px] bg-zinc-800 rounded-xl text-white">{t("stories.drawing.cancel")}</button>
         </div>
       </div>
 
@@ -584,12 +589,14 @@ function DrawCanvas({
 
 // ─── Main Stories Component ───────────────────────────────────────────────────
 export default function Stories({ currentUser, stories = [] }: { currentUser: any; stories?: Story[] }) {
+  const t = useTranslations("feed");
+
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerStart, setViewerStart] = useState(0);
   const [localStories, setLocalStories] = useState<Story[]>(stories);
   const [creatorOpen, setCreatorOpen] = useState(false);
 
-  // Creator state variables
+  // Creator state
   const [createMode, setCreateMode] = useState<"pick" | "media" | "text">("pick");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -598,12 +605,12 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
 
   // Editor states
   const [textContent, setTextContent] = useState("");
-  const [selectedBg, setSelectedBg] = useState(TEXT_BG_PRESETS[0]?.value);
-  const [selectedFont, setSelectedFont] = useState(FONT_PRESETS[0]?.value);
-  const [textColor, setTextColor] = useState("#ffffff");
+  const [selectedBg, setSelectedBg] = useState<string>(TEXT_BG_PRESETS[0]?.value ?? "from-zinc-950 to-zinc-800");
+  const [selectedFont, setSelectedFont] = useState<string>(FONT_PRESETS[0]?.value ?? "font-sans font-semibold tracking-wide");
+  const [textColor] = useState("#ffffff");
   const [audience, setAudience] = useState<"PUBLIC" | "FOLLOWERS" | "CLOSE_FRIENDS">("PUBLIC");
 
-  // Filter effect overlays
+  // Filters select options
   const [mediaFilter, setMediaFilter] = useState("none");
   const FILTERS = [
     { name: "Normal", value: "none" },
@@ -645,7 +652,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
       type: stickerMode,
       text: stickerText.trim(),
       x: 50,
-      y: 40 + stickersList.length * 10, // vertical cascade default override
+      y: 40 + stickersList.length * 10,
     };
     if (stickerMode === "POLL") {
       item.options = stickerOptions;
@@ -674,7 +681,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
         const upRes = await fetch("/api/upload", { method: "POST", body: fd }).then(r => r.json());
         if (upRes.success) {
           const res = await createStory({
-            mediaUrl: upRes.url,
+            mediaUrl: upRes.url ?? "",
             type: fileType,
             stickers: stickersList,
             audience,
@@ -757,11 +764,11 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                   <span className="text-xl font-black text-violet-400">{currentUser?.name?.[0] ?? "U"}</span>
                 )}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-violet-600 border-2 border-zinc-950 flex items-center justify-center">
+              <div className="absolute -bottom-1 -end-1 w-5 h-5 rounded-full bg-violet-600 border-2 border-zinc-950 flex items-center justify-center">
                 <Plus className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
-            <span className="text-[11px] text-zinc-400 font-bold select-none truncate w-16 text-center">Your Story</span>
+            <span className="text-[11px] text-zinc-400 font-bold select-none truncate w-16 text-center">{t("stories.yourStory")}</span>
           </div>
 
           {/* Map Stories */}
@@ -794,7 +801,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                   </div>
                 </div>
                 <span className="text-[11px] text-zinc-450 font-bold tracking-tight truncate w-16 text-center">
-                  {story.isOwn ? "Your Story" : story.user.profile.displayName.split(" ")[0]}
+                  {story.isOwn ? t("stories.yourStoryAuthor") : story.user.profile.displayName.split(" ")[0]}
                 </span>
               </div>
             );
@@ -809,7 +816,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
             
             {/* Header */}
             <div className="flex justify-between items-center px-4 py-3.5 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur">
-              <h3 className="font-extrabold text-white text-sm tracking-wide uppercase">New Story</h3>
+              <h3 className="font-extrabold text-white text-sm tracking-wide uppercase">{t("stories.newStory")}</h3>
               <button onClick={resetCreator} className="w-8 h-8 rounded-full bg-zinc-900 hover:bg-zinc-850 flex items-center justify-center text-zinc-450 transition-colors"><X className="w-4 h-4" /></button>
             </div>
 
@@ -826,23 +833,23 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                       input.onchange = (e: any) => handleFileChange(e);
                       input.click();
                     }}
-                    className="w-full flex items-center gap-4 p-5 rounded-2xl bg-zinc-900/60 border border-zinc-850 hover:bg-zinc-850 transition-all text-left group"
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl bg-zinc-900/60 border border-zinc-850 hover:bg-zinc-850 transition-all text-start group"
                   >
                     <div className="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform"><ImageIcon className="w-5 h-5 text-white" /></div>
                     <div>
-                      <h5 className="font-bold text-white text-sm">Media Story</h5>
-                      <p className="text-zinc-500 text-xs mt-0.5">Upload a photo or short video</p>
+                      <h5 className="font-bold text-white text-sm">{t("stories.mediaStory.title")}</h5>
+                      <p className="text-zinc-550 text-xs mt-0.5">{t("stories.mediaStory.desc")}</p>
                     </div>
                   </button>
 
                   <button 
                     onClick={() => setCreateMode("text")}
-                    className="w-full flex items-center gap-4 p-5 rounded-2xl bg-zinc-900/60 border border-zinc-850 hover:bg-zinc-850 transition-all text-left group"
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl bg-zinc-900/60 border border-zinc-850 hover:bg-zinc-850 transition-all text-start group"
                   >
                     <div className="w-12 h-12 rounded-xl bg-pink-650 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform"><Type className="w-5 h-5 text-white" /></div>
                     <div>
-                      <h5 className="font-bold text-white text-sm">Text Story</h5>
-                      <p className="text-zinc-500 text-xs mt-0.5">Write a colorful, stylized thought</p>
+                      <h5 className="font-bold text-white text-sm">{t("stories.textStory.title")}</h5>
+                      <p className="text-zinc-550 text-xs mt-0.5">{t("stories.textStory.desc")}</p>
                     </div>
                   </button>
                 </div>
@@ -854,7 +861,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                   <textarea
                     value={textContent}
                     onChange={e => setTextContent(e.target.value)}
-                    placeholder="Type words here..."
+                    placeholder={t("stories.typeWords")}
                     className={`bg-transparent border-0 text-3xl font-bold leading-normal outline-none text-center resize-none w-full max-h-48 tracking-wide drop-shadow-md placeholder:text-white/40 ${selectedFont}`}
                     style={{ color: textColor }}
                     rows={4}
@@ -904,7 +911,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                       >
                         <div className="relative">
                           <button 
-                            className="absolute -top-3.5 -right-3.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-[9px]"
+                            className="absolute -top-3.5 -end-3.5 w-5 h-5 rounded-full bg-red-650 text-white flex items-center justify-center font-bold text-[9px]"
                             onClick={() => setStickersList(p => p.filter(x => x.id !== st.id))}
                           >
                             ×
@@ -924,7 +931,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
 
                           {st.type === "POLL" && (
                             <div className="glass-dark border border-white/20 p-2.5 rounded-2xl w-40 text-center shadow-2xl">
-                              <p className="text-white text-[11px] font-bold mb-1.5">{st.text || "Poll Option"}</p>
+                              <p className="text-white text-[11px] font-bold mb-1.5">{st.text || t("stories.stickerTypes.poll")}</p>
                               <div className="flex gap-1">
                                 {st.options?.map((o, idx) => (
                                   <span key={idx} className="flex-1 bg-white/20 text-white font-bold rounded-lg py-1 text-[9px]">{o}</span>
@@ -935,8 +942,8 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
 
                           {st.type === "QUESTION" && (
                             <div className="bg-white border rounded-xl w-36 shadow-lg p-2 text-center text-zinc-900">
-                              <span className="bg-violet-600 text-white font-black text-[8px] rounded px-1 py-0.5 uppercase tracking-wider block mb-1">Question</span>
-                              <p className="text-[10px] font-bold">{st.text || "Ask me..."}</p>
+                              <span className="bg-violet-650 text-white font-black text-[8px] rounded px-1 py-0.5 uppercase tracking-wider block mb-1">{t("stories.stickerTypes.question")}</span>
+                              <p className="text-[10px] font-bold">{st.text || t("stories.placeholder.location")}</p>
                             </div>
                           )}
                         </div>
@@ -954,28 +961,24 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                 {/* Media toolbar selectors */}
                 {createMode === "media" && (
                   <div className="flex justify-between items-center gap-2">
-                    {/* Drawing button */}
                     <button 
                       onClick={() => setDrawOpen(true)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-[10px] uppercase font-bold text-zinc-100 transition-all"
                     >
                       <Palette className="w-4 h-4 text-pink-400" />
-                      <span>Draw</span>
+                      <span>{t("stories.draw")}</span>
                     </button>
 
-                    {/* Stickers tray */}
                     <button 
                       onClick={() => {
-                        // show sticker pick list
-                        setStickerMode("MENTION"); // defaults
+                        setStickerMode("MENTION");
                       }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-[10px] uppercase font-bold text-zinc-100 transition-all"
                     >
                       <Smile className="w-4 h-4 text-emerald-400" />
-                      <span>Sticker</span>
+                      <span>{t("stories.sticker")}</span>
                     </button>
 
-                    {/* Filters select wrapper */}
                     <div className="flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-amber-400" />
                       <select 
@@ -994,7 +997,6 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                 {/* Text toolbar adjustments */}
                 {createMode === "text" && (
                   <div className="space-y-2">
-                    {/* Bgs list */}
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {TEXT_BG_PRESETS.map(p => (
                         <button
@@ -1007,7 +1009,6 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                       ))}
                     </div>
 
-                    {/* Fonts list */}
                     <div className="flex gap-1.5">
                       {FONT_PRESETS.map(f => (
                         <button
@@ -1024,20 +1025,20 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                   </div>
                 )}
 
-                {/* Sticker builder modal overlay if picker active */}
+                {/* Sticker builder modal overlay */}
                 {stickerMode && (
                   <div className="absolute inset-0 bg-black/90 z-[120] flex items-center justify-center p-4">
                     <div className="w-full max-w-[280px] bg-zinc-900 border border-zinc-800 rounded-3xl p-4 text-center">
-                      <p className="text-zinc-450 text-[10px] font-black uppercase tracking-wider mb-3">Add Sticker</p>
+                      <p className="text-zinc-550 text-[10px] font-black uppercase tracking-wider mb-3">{t("stories.addSticker")}</p>
                       
                       <div className="flex gap-1.5 mb-3.5">
-                        {(["MENTION", "HASHTAG", "LOCATION", "POLL", "QUESTION"] as const).map(t => (
+                        {(["MENTION", "HASHTAG", "LOCATION", "POLL", "QUESTION"] as const).map(stickerType => (
                           <button
-                            key={t}
-                            onClick={() => setStickerMode(t)}
-                            className={`px-2 py-1 rounded-xl text-[8px] font-black uppercase flex-1 ${stickerMode === t ? "bg-white text-zinc-950" : "bg-zinc-800 text-zinc-350"}`}
+                            key={stickerType}
+                            onClick={() => setStickerMode(stickerType)}
+                            className={`px-2 py-1 rounded-xl text-[8px] font-black uppercase flex-1 ${stickerMode === stickerType ? "bg-white text-zinc-950" : "bg-zinc-800 text-zinc-350"}`}
                           >
-                            {t}
+                            {t(`stories.stickerTypes.${stickerType.toLowerCase() as any}`)}
                           </button>
                         ))}
                       </div>
@@ -1046,7 +1047,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                         <div className="space-y-2 mb-3">
                           <input 
                             type="text" 
-                            placeholder="Poll question..." 
+                            placeholder={t("stories.placeholder.poll")} 
                             value={stickerText} 
                             onChange={e => setStickerText(e.target.value)}
                             className="w-full bg-zinc-800 text-white rounded-xl px-2.5 py-1.5 text-xs outline-none"
@@ -1054,14 +1055,14 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                           <div className="flex gap-1.5">
                             <input 
                               type="text" 
-                              value={stickerOptions[0]} 
-                              onChange={e => setStickerOptions([e.target.value, stickerOptions[1]])}
+                              value={stickerOptions[0] ?? ""} 
+                              onChange={e => setStickerOptions([e.target.value, stickerOptions[1] ?? ""])}
                               className="w-full bg-zinc-800 text-white rounded-lg px-2 py-1 text-[10px] text-center"
                             />
                             <input 
                               type="text" 
-                              value={stickerOptions[1]} 
-                              onChange={e => setStickerOptions([stickerOptions[0], e.target.value])}
+                              value={stickerOptions[1] ?? ""} 
+                              onChange={e => setStickerOptions([stickerOptions[0] ?? "", e.target.value])}
                               className="w-full bg-zinc-800 text-white rounded-lg px-2 py-1 text-[10px] text-center"
                             />
                           </div>
@@ -1069,7 +1070,13 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                       ) : (
                         <input 
                           type="text" 
-                          placeholder={stickerMode === "MENTION" ? "username" : stickerMode === "HASHTAG" ? "#topic" : "Location / Question..."} 
+                          placeholder={
+                            stickerMode === "MENTION" 
+                            ? t("stories.placeholder.username") 
+                            : stickerMode === "HASHTAG" 
+                            ? t("stories.placeholder.hashtag") 
+                            : t("stories.placeholder.location")
+                          } 
                           value={stickerText}
                           onChange={e => setStickerText(e.target.value)}
                           className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl px-3 py-2 text-xs outline-none mb-3"
@@ -1077,9 +1084,9 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                         />
                       )}
 
-                      <div className="flex gap-2">
-                        <button onClick={() => setStickerMode(null)} className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-850 text-white rounded-xl text-xs">Close</button>
-                        <button onClick={addSticker} className="flex-1 py-1.5 bg-violet-650 hover:bg-violet-600 text-white rounded-xl text-xs font-bold">Add</button>
+                      <div className="flex gap-2 font-bold">
+                        <button onClick={() => setStickerMode(null)} className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-850 text-white rounded-xl text-xs">{t("stories.close")}</button>
+                        <button onClick={addSticker} className="flex-1 py-1.5 bg-violet-650 hover:bg-violet-600 text-white rounded-xl text-xs">{t("stories.add")}</button>
                       </div>
                     </div>
                   </div>
@@ -1087,24 +1094,24 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
 
                 {/* Privacy setup tray */}
                 <div className="flex items-center justify-between border-t border-zinc-900 pt-3">
-                  <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest flex items-center gap-1"><Users className="w-3.5 h-3.5 text-zinc-450" /> Audience</span>
-                  <div className="flex gap-1">
+                  <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest flex items-center gap-1"><Users className="w-3.5 h-3.5 text-zinc-450" /> {t("stories.audience")}</span>
+                  <div className="flex gap-1 font-bold">
                     {(["PUBLIC", "FOLLOWERS"] as const).map(a => (
                       <button
                         key={a}
                         onClick={() => setAudience(a)}
-                        className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-[9px] transition-all ${
                           audience === a ? "bg-white text-zinc-950" : "bg-zinc-900 text-zinc-450"
                         }`}
                       >
-                        {a}
+                        {t(`stories.${a.toLowerCase() as any}`)}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Submit actions bottom panel */}
-                <div className="flex gap-2 border-t border-zinc-900 pt-3 bg-zinc-950">
+                <div className="flex gap-2 border-t border-zinc-900 pt-3 bg-zinc-950 font-bold">
                   <button 
                     onClick={() => {
                       if (createMode === "text" || !previewUrl) {
@@ -1114,17 +1121,17 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                         setCreateMode("pick");
                       }
                     }} 
-                    className="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-850 text-zinc-300 text-xs font-bold transition-all"
+                    className="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-850 text-zinc-350 text-xs transition-all"
                   >
-                    Back
+                    {t("stories.back")}
                   </button>
                   <button 
                     onClick={handleCreatorPublish} 
                     disabled={uploading || (createMode === "text" && !textContent.trim())} 
-                    className="flex-1 gradient-btn py-2.5 rounded-xl text-white text-xs font-extrabold disabled:opacity-40 flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-xl"
+                    className="flex-1 gradient-btn py-2.5 rounded-xl text-white text-xs disabled:opacity-40 flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-xl"
                   >
                     {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>{uploading ? "Publishing…" : "Post Story"}</span>
+                    <span>{uploading ? t("stories.publishing") : t("stories.publish")}</span>
                   </button>
                 </div>
               </div>

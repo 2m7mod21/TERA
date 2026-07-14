@@ -31,6 +31,7 @@ export type PermissionMatrix = {
   systemMonitor?: AdminPermission;
   auditLogs?: AdminPermission;
   support?: AdminPermission;
+  feedWeights?: AdminPermission;
 };
 
 /** Default permission matrices per role */

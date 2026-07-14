@@ -1,0 +1,54 @@
+{
+  "title": "Explore",
+  "search": {
+    "placeholder": "Search people, posts, hashtags...",
+    "results": "Search results for \"{query}\"",
+    "noResults": "No results for \"{query}\"",
+    "people": "People",
+    "posts": "Posts",
+    "hashtags": "Hashtags",
+    "all": "All"
+  },
+  "trending": {
+    "title": "Trending",
+    "posts": "{count, plural, one {# post} other {# posts}}"
+  },
+  "suggested": {
+    "title": "Suggested for you",
+    "peopleToFollow": "People to follow",
+    "peopleYouMayKnow": "People You May Know",
+    "seeAll": "See all",
+    "mutuals": "{count, plural, one {# mutual} other {# mutuals}}",
+    "suggestedForYou": "Suggested for you"
+  },
+  "follow": {
+    "follow": "Follow",
+    "following": "Following",
+    "activeNow": "Active Now"
+  },
+  "sponsored": {
+    "label": "Sponsored",
+    "title": "TERA Premium Pro",
+    "description": "Unlock exclusive themes, anim-reactors, and custom story stickers with TERA Premium!",
+    "cta": "Upgrade Now"
+  },
+  "footer": {
+    "links": "Privacy · Terms · Advertising · Cookies",
+    "copyright": "© 2025 TERA Social Platform"
+  },
+  "categories": {
+    "all": "All",
+    "photos": "Photos",
+    "videos": "Videos",
+    "news": "News",
+    "sports": "Sports",
+    "entertainment": "Entertainment",
+    "technology": "Technology"
+  },
+  "filter": {
+    "title": "Filter",
+    "recent": "Most recent",
+    "popular": "Most popular",
+    "relevance": "Most relevant"
+  }
+}

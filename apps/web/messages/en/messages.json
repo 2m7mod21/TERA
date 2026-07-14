@@ -1,0 +1,35 @@
+{
+  "title": "Messages",
+  "newMessage": "New Message",
+  "search": "Search conversations...",
+  "empty": {
+    "title": "No messages yet",
+    "subtitle": "Start a conversation",
+    "start": "Start messaging"
+  },
+  "input": {
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "sending": "Sending..."
+  },
+  "conversation": {
+    "active": "Active now",
+    "lastSeen": "Last seen {time}",
+    "typing": "{name} is typing...",
+    "you": "You: {message}",
+    "read": "Read",
+    "delivered": "Delivered",
+    "sent": "Sent"
+  },
+  "group": {
+    "title": "Group Chat",
+    "members": "{count, plural, one {# member} other {# members}}",
+    "addMembers": "Add members",
+    "leave": "Leave group",
+    "name": "Group name"
+  },
+  "media": {
+    "sendPhoto": "Send photo",
+    "sendFile": "Send file"
+  }
+}

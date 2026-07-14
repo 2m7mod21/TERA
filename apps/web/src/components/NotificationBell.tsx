@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { io, Socket } from "socket.io-client";
 import {
   Bell, Heart, MessageCircle, UserPlus, Star,
@@ -78,18 +79,28 @@ export const NOTIF_COLORS: Record<string, string> = {
   ADMIN: "bg-red-600",
 };
 
+export const ENTITY_LINKS: Record<string, (id: string) => string> = {
+  POST: (id) => `/post/${id}`,
+  COMMENT: (id) => `/post/${id}`,
+  USER: (id) => `/${id}`,
+  STORY: () => "/",
+  GROUP: (id) => `/groups/${id}`,
+  MESSAGE: (_id) => `/messages`,
+};
+
+// Static fallback labels used by NotificationsClient toast
 export const NOTIF_LABELS: Record<string, string> = {
   FOLLOW: "started following you",
   FRIEND_REQUEST: "sent you a friend request",
   FRIEND_ACCEPT: "accepted your friend request",
-  REACTION: "reacted to your post",
+  REACTION: "liked your post",
   COMMENT: "commented on your post",
   REPLY: "replied to your comment",
   MENTION: "mentioned you",
   TAG: "tagged you in a post",
   SHARE: "shared your post",
   SAVE: "saved your post",
-  REPOST: "reposted your content",
+  REPOST: "reposted your post",
   MESSAGE: "sent you a message",
   MESSAGE_REACTION: "reacted to your message",
   STORY_VIEW: "viewed your story",
@@ -98,23 +109,14 @@ export const NOTIF_LABELS: Record<string, string> = {
   STORY_MENTION: "mentioned you in a story",
   GROUP_INVITE: "invited you to a group",
   EVENT_INVITE: "invited you to an event",
-  POST_APPROVED: "Your post was approved",
-  POST_REMOVED: "Your post was removed",
-  ACCOUNT_VERIFIED: "Your account is now verified",
-  SECURITY_ALERT: "Security alert on your account",
-  LOGIN_ALERT: "New login detected",
-  SYSTEM: "System notification",
-  ACHIEVEMENT: "You earned a new achievement!",
-  ADMIN: "Admin notification",
-};
-
-export const ENTITY_LINKS: Record<string, (id: string) => string> = {
-  POST: (id) => `/post/${id}`,
-  COMMENT: (id) => `/post/${id}`,
-  USER: (id) => `/${id}`,
-  STORY: () => "/",
-  GROUP: (id) => `/groups/${id}`,
-  MESSAGE: (_id) => `/messages`,
+  POST_APPROVED: "your post was approved",
+  POST_REMOVED: "your post was removed",
+  ACCOUNT_VERIFIED: "your account is verified",
+  SECURITY_ALERT: "security alert on your account",
+  LOGIN_ALERT: "new login detected",
+  SYSTEM: "system notification",
+  ACHIEVEMENT: "you earned an achievement",
+  ADMIN: "admin notification",
 };
 
 export function timeAgo(date: Date | string) {
@@ -145,6 +147,7 @@ export function NotificationRow({
 }: {
   n: any; onRead: (id: string) => void; onDelete?: (id: string) => void; compact?: boolean;
 }) {
+  const tN = useTranslations("notifications");
   const Icon = NOTIF_ICONS[n.type] ?? Bell;
   const iconBg = NOTIF_COLORS[n.type] ?? "bg-zinc-500";
   const sender = n.sender?.profile;
@@ -172,17 +175,23 @@ export function NotificationRow({
     }
   }
 
-  let actionLabel = NOTIF_LABELS[n.type] ?? "interacted with you";
+  // Build translated action label
+  const NOTIF_KNOWN_TYPES = ["FOLLOW","FRIEND_REQUEST","FRIEND_ACCEPT","REACTION","COMMENT","REPLY","MENTION","TAG","SHARE","SAVE","REPOST","MESSAGE","MESSAGE_REACTION","STORY_VIEW","STORY_REACTION","STORY_REPLY","STORY_MENTION","GROUP_INVITE","EVENT_INVITE","POST_APPROVED","POST_REMOVED","ACCOUNT_VERIFIED","SECURITY_ALERT","LOGIN_ALERT","SYSTEM","ACHIEVEMENT","ADMIN"] as const;
+  const labelKey = NOTIF_KNOWN_TYPES.includes(n.type) ? `labels.${n.type}` : "labels.SYSTEM";
+  let actionLabel: string = tN(labelKey as any);
   let contentPreview = "";
-  
+
   if (n.type === "REACTION" && meta.reactionType) {
-    const rxIcon = meta.reactionType === "HEART" ? "❤️" : meta.reactionType === "LAUGH" ? "😹" : meta.reactionType === "WOW" ? "😲" : meta.reactionType === "SAD" ? "😢" : meta.reactionType === "ANGRY" ? "😡" : "👍";
-    actionLabel = `reacted ${rxIcon} to your post`;
+    const KNOWN_REACTIONS = ["HEART","LAUGH","WOW","SAD","ANGRY"] as const;
+    const rxIcon = KNOWN_REACTIONS.includes(meta.reactionType)
+      ? tN(`reaction.${meta.reactionType}` as any)
+      : "👍";
+    actionLabel = tN("reactionLabel", { emoji: rxIcon });
   } else if (n.type === "COMMENT" && meta.commentText) {
-    actionLabel = "commented on your post";
+    actionLabel = tN("labels.COMMENT");
     contentPreview = meta.commentText;
   } else if (n.type === "REPLY" && meta.commentText) {
-    actionLabel = "replied to your comment";
+    actionLabel = tN("labels.REPLY");
     contentPreview = meta.commentText;
   }
 
@@ -205,7 +214,7 @@ export function NotificationRow({
     >
       {/* Unread indicator line */}
       {!n.isRead && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-violet-500 rounded-full" />
+        <div className="absolute inset-inline-start-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-violet-500 rounded-full" />
       )}
 
       {/* Avatar + icon badge */}
@@ -217,7 +226,7 @@ export function NotificationRow({
                 {sender?.displayName?.[0] ?? "N"}
               </div>}
         </div>
-        <div className={`absolute -bottom-1 -right-1 rounded-full flex items-center justify-center border-2 border-zinc-950 ${iconBg} ${compact ? "w-4 h-4" : "w-5 h-5"}`}>
+        <div className={`absolute -bottom-1 -end-1 rounded-full flex items-center justify-center border-2 border-zinc-950 ${iconBg} ${compact ? "w-4 h-4" : "w-5 h-5"}`}>
           <Icon className={compact ? "w-2 h-2 text-white" : "w-2.5 h-2.5 text-white"} />
         </div>
       </div>
@@ -227,15 +236,15 @@ export function NotificationRow({
         <p className={`text-zinc-200 leading-snug ${compact ? "text-xs" : "text-sm"}`}>
           {sender
             ? <Link href={`/${sender.username}`} onClick={(e) => e.stopPropagation()}
-                className="font-semibold hover:text-violet-400 transition-colors mr-1">
+                className="font-semibold hover:text-violet-400 transition-colors me-1">
                 {sender.displayName}
               </Link>
-            : <span className="font-semibold mr-1">TERA</span>}
+            : <span className="font-semibold me-1">TERA</span>}
           <span className="text-zinc-400">{actionLabel}</span>
         </p>
         
         {contentPreview && (
-          <p className="mt-1 text-xs text-zinc-350 italic truncate border-l-2 border-zinc-700 pl-2">
+          <p className="mt-1 text-xs text-zinc-350 italic truncate border-s-2 border-zinc-700 ps-2">
             {contentPreview}
           </p>
         )}
@@ -246,7 +255,7 @@ export function NotificationRow({
           {entityLink !== "#" && (
             <Link href={entityLink} onClick={(e) => e.stopPropagation()}
               className={`text-violet-400 hover:text-violet-300 transition-colors ${compact ? "text-[10px]" : "text-xs"}`}>
-              View →
+              {tN("view")}
             </Link>
           )}
         </div>
@@ -256,14 +265,14 @@ export function NotificationRow({
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         {!n.isRead && (
           <button onClick={(e) => { e.stopPropagation(); onRead(n.id); }}
-            title="Mark read"
+            title={tN("markRead")}
             className="w-6 h-6 bg-zinc-800 hover:bg-violet-500/20 rounded-full flex items-center justify-center transition-colors">
             <Check className="w-3 h-3 text-zinc-400 hover:text-violet-400" />
           </button>
         )}
         {onDelete && (
           <button onClick={(e) => { e.stopPropagation(); onDelete(n.id); }}
-            title="Delete"
+            title={tN("delete")}
             className="w-6 h-6 bg-zinc-800 hover:bg-rose-500/20 rounded-full flex items-center justify-center transition-colors">
             <X className="w-3 h-3 text-zinc-500 hover:text-rose-400" />
           </button>
@@ -283,6 +292,7 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ currentUserId, initialCount = 0 }: NotificationBellProps) {
+  const tN = useTranslations("notifications");
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(initialCount);
@@ -395,14 +405,14 @@ export default function NotificationBell({ currentUserId, initialCount = 0 }: No
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[380px] max-h-[520px] flex flex-col glass border border-zinc-700/50 rounded-2xl shadow-2xl overflow-hidden z-50 scale-in">
+        <div className="absolute end-0 top-full mt-2 w-[380px] max-h-[520px] flex flex-col glass border border-zinc-700/50 rounded-2xl shadow-2xl overflow-hidden z-50 scale-in">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-zinc-100 text-base">Notifications</h3>
+              <h3 className="font-bold text-zinc-100 text-base">{tN("title")}</h3>
               {displayCount && (
                 <span className="bg-violet-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  {displayCount} new
+                  {tN("new", { count: unreadCount })}
                 </span>
               )}
             </div>
@@ -410,12 +420,12 @@ export default function NotificationBell({ currentUserId, initialCount = 0 }: No
               {unreadCount > 0 && (
                 <button onClick={handleMarkAllRead}
                   className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors px-2 py-1 rounded-lg hover:bg-violet-500/10">
-                  <CheckCheck className="w-3.5 h-3.5" /> All read
+                  <CheckCheck className="w-3.5 h-3.5" /> {tN("markReadShort")}
                 </button>
               )}
               <button onClick={() => setMuted(!muted)}
                 className={`text-xs px-2 py-1 rounded-lg transition-colors ${muted ? "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}
-                title={muted ? "Unmute sounds" : "Mute sounds"}>
+                title={muted ? tN("unmute") : tN("mute")}>
                 {muted ? "🔇" : "🔔"}
               </button>
             </div>
@@ -430,9 +440,9 @@ export default function NotificationBell({ currentUserId, initialCount = 0 }: No
                 <div className="w-14 h-14 rounded-full bg-zinc-900 flex items-center justify-center">
                   <Bell className="w-7 h-7 opacity-30" />
                 </div>
-                <p className="text-sm font-medium">All caught up!</p>
+                <p className="text-sm font-medium">{tN("empty.title")}</p>
                 <p className="text-xs text-center text-zinc-700 max-w-[200px]">
-                  New notifications will appear here.
+                  {tN("empty.subtitle")}
                 </p>
               </div>
             ) : (
@@ -454,7 +464,7 @@ export default function NotificationBell({ currentUserId, initialCount = 0 }: No
           <div className="border-t border-zinc-800/60 px-4 py-2.5">
             <Link href="/notifications" onClick={() => setOpen(false)}
               className="block text-center text-sm text-violet-400 font-semibold hover:text-violet-300 transition-colors py-1 rounded-xl hover:bg-violet-500/10">
-              View all notifications →
+              {tN("seeAll")}
             </Link>
           </div>
         </div>

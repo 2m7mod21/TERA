@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter, usePathname } from "@/i18n/navigation";
 import { signOut } from "next-auth/react";
 import {
   Home, Users, MessageCircle, Bell, Video, Search, Settings,
@@ -12,6 +12,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { getSavedAccounts, saveAccount, removeSavedAccount, type SavedAccount } from "@/lib/accounts";
 import { generateSwitchToken } from "@/server/actions/accounts";
 import { signIn } from "next-auth/react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface TopNavProps {
   user: any;
@@ -20,6 +21,7 @@ interface TopNavProps {
 }
 
 export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavProps) {
+  const t = useTranslations("common");
   const pathname = usePathname();
   const router = useRouter();
   const [searchQ, setSearchQ] = useState("");
@@ -87,11 +89,11 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
   }, []);
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home" },
-    { href: "/explore", icon: Users, label: "Friends" },
-    { href: "/messages", icon: MessageCircle, label: "Messages", badge: msgCount },
-    { href: "/notifications", icon: Bell, label: "Notifications", badge: notifCount },
-    { href: "/reels", icon: Video, label: "Watch" },
+    { href: "/", icon: Home, label: t("nav.home") },
+    { href: "/explore", icon: Users, label: t("nav.friends") },
+    { href: "/messages", icon: MessageCircle, label: t("nav.messages"), badge: msgCount },
+    { href: "/notifications", icon: Bell, label: t("nav.notifications"), badge: notifCount },
+    { href: "/reels", icon: Video, label: t("nav.watch") },
   ];
 
   const avatar = user?.image;
@@ -112,7 +114,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
       <nav className="fixed top-0 left-0 right-0 z-50 h-14 glass border-b border-white/[0.06] flex items-center px-4 gap-2">
         {/* Left: Logo + Search */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-          <Link href="/" className="flex items-center gap-1.5 mr-1">
+          <Link href="/" className="flex items-center gap-1.5 me-1">
             <div className="w-9 h-9 rounded-xl gradient-btn flex items-center justify-center flex-shrink-0">
               <span className="text-white font-black text-lg leading-none">T</span>
             </div>
@@ -125,7 +127,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
               <input
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Search TERA..."
+                placeholder={t("nav.search")}
                 className="bg-transparent text-sm text-zinc-100 placeholder-zinc-500 outline-none w-full"
               />
             </form>
@@ -159,7 +161,12 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
         </div>
 
         {/* Right: Notification Bell + User menu */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+        <div className="flex items-center gap-1.5 flex-shrink-0 ms-auto">
+          {/* Language Switcher */}
+          <div className="hidden md:block">
+            <LanguageSwitcher />
+          </div>
+
           {/* Mobile search */}
           <button
             className="md:hidden w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center"
@@ -180,10 +187,10 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
           {user?.isAdmin && (
             <Link
               href="/admin"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-400 text-xs font-semibold border border-amber-500/20 hover:bg-amber-500/25 transition-all"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-400 text-xs font-semibold border border-amber-500/20 hover:bg-amber-500/25 transition-all w-fit"
             >
               <Shield className="w-3.5 h-3.5" />
-              Admin
+              {t("nav.admin")}
             </Link>
           )}
 
@@ -219,7 +226,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
           <div className="relative" ref={dropRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-zinc-800 transition-all"
+              className="flex items-center gap-2 ps-1 pe-2 py-1 rounded-full hover:bg-zinc-800 transition-all font-semibold"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
                 {avatar ? (
@@ -230,12 +237,12 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
             </button>
 
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-2 w-56 glass rounded-2xl border border-zinc-700/50 shadow-2xl overflow-hidden scale-in z-50">
+              <div className="absolute end-0 top-full mt-2 w-56 glass rounded-2xl border border-zinc-700/50 shadow-2xl overflow-hidden scale-in z-50">
                 <div className="px-4 py-3 border-b border-zinc-800">
                   <p className="font-semibold text-zinc-100 text-sm">{displayName}</p>
                   <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
                 </div>
-                <div className="p-1.5 space-y-0.5">
+                <div className="p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
                   {username && (
                     <Link
                       href={`/${username}`}
@@ -243,7 +250,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
                     >
                       <User className="w-4 h-4 text-zinc-400" />
-                      View Profile
+                      {t("nav.viewProfile")}
                     </Link>
                   )}
                   <Link
@@ -252,11 +259,11 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
                   >
                     <Settings className="w-4 h-4 text-zinc-400" />
-                    Settings
+                    {t("nav.settings")}
                   </Link>
                   {savedAccounts.length > 0 && (
                     <div className="border-t border-zinc-800/80 px-2 py-2">
-                      <p className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-500">Switch Account</p>
+                      <p className="px-2 pb-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-500">{t("nav.switchAccount")}</p>
                       {savedAccounts.map((acc) => (
                         <div key={acc.id} className="flex items-center justify-between group/acc px-2 py-1.5 rounded-xl hover:bg-zinc-800/50 transition-all cursor-pointer">
                           <div onClick={() => handleSwitch(acc)} className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -290,17 +297,17 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                   <div className="border-t border-zinc-800 mt-1 pt-1">
                     <button
                       onClick={handleAddAccount}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-violet-400 hover:bg-violet-500/10 transition-all w-full text-left"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-violet-400 hover:bg-violet-500/10 transition-all w-full text-start"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Account
+                      {t("nav.addAccount")}
                     </button>
                     <button
                       onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-400 hover:bg-rose-500/10 transition-all w-full text-left"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-400 hover:bg-rose-500/10 transition-all w-full text-start"
                     >
                       <LogOut className="w-4 h-4" />
-                      Sign Out
+                      {t("nav.signOut")}
                     </button>
                   </div>
                 </div>
@@ -315,6 +322,10 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenu(false)} />
           <div className="absolute top-14 left-0 right-0 glass border-b border-zinc-800 p-4 scale-in">
+            <div className="flex items-center justify-between mb-4 border-b border-zinc-800/80 pb-2">
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t("nav.moreOptions")}</span>
+              <LanguageSwitcher />
+            </div>
             <div className="grid grid-cols-5 gap-2">
               {navItems.map(({ href, icon: Icon, label, badge }) => (
                 <Link
@@ -326,7 +337,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                   }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-[10px] font-medium">{label}</span>
+                  <span className="text-[10px] font-medium text-center truncate w-full">{label}</span>
                   {!!badge && badge > 0 && <span className="notif-badge">{badge > 9 ? "9+" : badge}</span>}
                 </Link>
               ))}
@@ -345,7 +356,7 @@ export default function TopNav({ user, notifCount = 0, msgCount = 0 }: TopNavPro
                 ref={searchRef}
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Search TERA..."
+                placeholder={t("nav.search")}
                 className="bg-transparent text-zinc-100 outline-none flex-1"
                 autoFocus
               />

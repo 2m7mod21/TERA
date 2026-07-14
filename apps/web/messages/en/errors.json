@@ -1,0 +1,19 @@
+{
+  "generic": "Something went wrong. Please try again.",
+  "notFound": "Page not found",
+  "unauthorized": "You're not authorized to do this",
+  "forbidden": "Access denied",
+  "serverError": "Server error. Please try again later.",
+  "networkError": "Network error. Check your connection.",
+  "sessionExpired": "Your session has expired. Please sign in again.",
+  "contentRemoved": "This content has been removed",
+  "postNotFound": "Post not found",
+  "userNotFound": "User not found",
+  "rateLimited": "Too many requests. Slow down!",
+  "uploadFailed": "Upload failed. Please try again.",
+  "fileTooLarge": "File is too large. Max size is {size}MB.",
+  "invalidFileType": "Invalid file type. Allowed: {types}",
+  "reportSubmitted": "Report submitted. Thank you.",
+  "blockedByUser": "You can't interact with this account",
+  "moderationHold": "This content is under review"
+}

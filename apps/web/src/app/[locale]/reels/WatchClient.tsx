@@ -11,7 +11,7 @@ import CommentModal from "@/components/CommentModal";
 import {
   Home, Film, MessageCircle, Bell, Users,
   Settings, LogOut, User, Bookmark, Shield,
-  Loader2, Hash,
+  Loader2,
 } from "lucide-react";
 
 const LEFT_NAV = [

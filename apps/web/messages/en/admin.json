@@ -1,0 +1,42 @@
+{
+  "title": "Administration",
+  "dashboard": "Dashboard",
+  "users": "Users",
+  "content": "Content",
+  "reportsNav": "Reports",
+  "analytics": "Analytics",
+  "moderation": "Moderation",
+  "settings": "Settings",
+  "feedAlgorithm": "Feed Algorithm",
+  "stats": {
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "totalPosts": "Total Posts",
+    "reports": "Reports",
+    "pendingReports": "Pending Reports"
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "ban": "Ban",
+    "suspend": "Suspend",
+    "warn": "Warn",
+    "delete": "Delete",
+    "restore": "Restore"
+  },
+  "userManagement": {
+    "search": "Search users...",
+    "role": "Role",
+    "status": "Status",
+    "joinedDate": "Joined",
+    "actions": "Actions"
+  },
+  "reports": {
+    "pending": "Pending",
+    "reviewed": "Reviewed",
+    "resolved": "Resolved",
+    "reason": "Reason",
+    "reportedBy": "Reported by",
+    "reportedContent": "Reported content"
+  }
+}

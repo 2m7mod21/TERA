@@ -1,0 +1,67 @@
+{
+  "title": "Paramètres",
+  "sections": {
+    "account": "Compte",
+    "privacy": "Confidentialité et sécurité",
+    "notifications": "Notifications",
+    "appearance": "Apparence",
+    "security": "Sécurité",
+    "language": "Langue et région",
+    "monetization": "Monétisation",
+    "connected": "Applications connectées",
+    "data": "Données et activité",
+    "help": "Aide et support"
+  },
+  "account": {
+    "editProfile": "Modifier le profil",
+    "changePassword": "Changer le mot de passe",
+    "email": "Adresse e-mail",
+    "phone": "Numéro de téléphone",
+    "username": "Nom d'utilisateur",
+    "displayName": "Nom affiché",
+    "bio": "Biographie",
+    "website": "Site web",
+    "location": "Lieu",
+    "birthdate": "Date de naissance",
+    "deactivate": "Désactiver le compte",
+    "delete": "Supprimer le compte"
+  },
+  "privacy": {
+    "profileVisibility": "Visibilité du profil",
+    "public": "Public",
+    "friends": "Amis uniquement",
+    "private": "Privé",
+    "whoCanMessage": "Qui peut vous envoyer des messages",
+    "whoCanFollow": "Qui peut vous suivre",
+    "showActivity": "Afficher le statut d'activité",
+    "blockedUsers": "Utilisateurs bloqués"
+  },
+  "notifications": {
+    "push": "Notifications push",
+    "email": "Notifications par e-mail",
+    "likes": "J'aimes",
+    "comments": "Commentaires",
+    "follows": "Nouveaux abonnés",
+    "mentions": "Mentions",
+    "messages": "Messages",
+    "marketing": "Mises à jour produit"
+  },
+  "appearance": {
+    "theme": "Thème",
+    "language": "Langue",
+    "fontSize": "Taille de police",
+    "colorScheme": "Palette de couleurs"
+  },
+  "security": {
+    "twoFactor": "Authentification à deux facteurs",
+    "twoFactorEnabled": "2FA est activée",
+    "twoFactorDisabled": "2FA est désactivée",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "activeSessions": "Sessions actives",
+    "logOutAll": "Déconnecter tous les appareils"
+  },
+  "save": "Enregistrer les modifications",
+  "saved": "Modifications enregistrées !",
+  "saving": "Enregistrement..."
+}

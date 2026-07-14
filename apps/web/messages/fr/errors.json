@@ -1,0 +1,19 @@
+{
+  "generic": "Une erreur est survenue. Veuillez réessayer.",
+  "notFound": "Page non trouvée",
+  "unauthorized": "Vous n'êtes pas autorisé à faire cela",
+  "forbidden": "Accès refusé",
+  "serverError": "Erreur serveur. Veuillez réessayer plus tard.",
+  "networkError": "Erreur réseau. Vérifiez votre connexion.",
+  "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+  "contentRemoved": "Ce contenu a été supprimé",
+  "postNotFound": "Publication non trouvée",
+  "userNotFound": "Utilisateur non trouvé",
+  "rateLimited": "Trop de requêtes. Ralentissez !",
+  "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+  "fileTooLarge": "Le fichier est trop volumineux. Taille max : {size} Mo.",
+  "invalidFileType": "Type de fichier invalide. Autorisés : {types}",
+  "reportSubmitted": "Signalement soumis. Merci.",
+  "blockedByUser": "Vous ne pouvez pas interagir avec ce compte",
+  "moderationHold": "Ce contenu est en cours d'examen"
+}

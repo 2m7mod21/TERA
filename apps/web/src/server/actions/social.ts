@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "./notifications";
 import { emitNotification } from "@/server/socket/index";
+import { InteractionLogger } from "@/server/services/feed-engine/interaction-logger";
 
 export async function followUser(targetUserId: string) {
   const session = await auth();
@@ -14,6 +15,13 @@ export async function followUser(targetUserId: string) {
   try {
     await prisma.follow.create({
       data: { followerId: session.user.id, followeeId: targetUserId },
+    });
+    // Wire v2 Interaction Logging
+    await InteractionLogger.log({
+      userId: session.user.id,
+      type: "FOLLOW",
+      targetType: "USER",
+      targetId: targetUserId,
     });
     // Create notification + emit real-time
     const n = await createNotification({
@@ -39,6 +47,13 @@ export async function unfollowUser(targetUserId: string) {
   try {
     await prisma.follow.deleteMany({
       where: { followerId: session.user.id, followeeId: targetUserId },
+    });
+    // Wire v2 Interaction Logging
+    await InteractionLogger.log({
+      userId: session.user.id,
+      type: "UNFOLLOW",
+      targetType: "USER",
+      targetId: targetUserId,
     });
     revalidatePath("/");
     return { success: true, following: false };

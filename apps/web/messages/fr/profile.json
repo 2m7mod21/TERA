@@ -1,0 +1,14 @@
+{
+  "title": "Profil", "editProfile": "Modifier le profil",
+  "follow": "Suivre", "following": "Abonné", "unfollow": "Ne plus suivre",
+  "message": "Message", "block": "Bloquer", "unblock": "Débloquer", "report": "Signaler",
+  "stats": {
+    "posts": "{count, plural, one {# publication} other {# publications}}",
+    "followers": "{count, plural, one {# abonné} other {# abonnés}}",
+    "following": "{count} abonnements"
+  },
+  "tabs": { "posts": "Publications", "media": "Médias", "about": "À propos", "saved": "Enregistrés" },
+  "about": { "bio": "Biographie", "location": "Lieu", "website": "Site web", "joinedDate": "Inscrit en {date}" },
+  "empty": { "posts": "Aucune publication", "media": "Aucun média", "saved": "Aucun enregistrement" },
+  "verified": "Certifié", "admin": "Administrateur", "creator": "Créateur"
+}

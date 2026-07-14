@@ -1,0 +1,14 @@
+{
+  "title": "الملف الشخصي", "editProfile": "تعديل الملف الشخصي",
+  "follow": "متابعة", "following": "تتابعه", "unfollow": "إلغاء المتابعة",
+  "message": "رسالة", "block": "حظر", "unblock": "إلغاء الحظر", "report": "إبلاغ",
+  "stats": {
+    "posts": "{count, plural, =0 {منشورات} one {منشور واحد} two {منشوران} few {# منشورات} many {# منشوراً} other {# منشور}}",
+    "followers": "{count, plural, =0 {متابعون} one {متابع واحد} two {متابعان} few {# متابعين} many {# متابعاً} other {# متابع}}",
+    "following": "{count} متابَع"
+  },
+  "tabs": { "posts": "المنشورات", "media": "الوسائط", "about": "حول", "saved": "محفوظة" },
+  "about": { "bio": "نبذة", "location": "الموقع", "website": "الموقع الإلكتروني", "joinedDate": "انضم في {date}" },
+  "empty": { "posts": "لا توجد منشورات بعد", "media": "لا توجد وسائط بعد", "saved": "لا توجد منشورات محفوظة" },
+  "verified": "موثّق", "admin": "مدير", "creator": "منشئ محتوى"
+}

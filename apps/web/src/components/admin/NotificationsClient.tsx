@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Bell, Send, Compass, Info } from "lucide-react";
+import { Bell, Send } from "lucide-react";
 import { getMassNotifications, sendMassNotification } from "@/server/actions/admin/notifications";
 
 export default function NotificationsClient({

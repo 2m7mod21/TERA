@@ -1,0 +1,42 @@
+{
+  "title": "إدارة النظام",
+  "dashboard": "لوحة التحكم",
+  "users": "المستخدمون",
+  "content": "المحتوى",
+  "reportsNav": "البلاغات",
+  "analytics": "التحليلات",
+  "moderation": "الرقابة والاشراف",
+  "settings": "الإعدادات",
+  "feedAlgorithm": "خوارزمية الخلاصة",
+  "stats": {
+    "totalUsers": "إجمالي المستخدمين",
+    "activeUsers": "المستخدمون النشطون",
+    "totalPosts": "إجمالي المنشورات",
+    "reports": "البلاغات",
+    "pendingReports": "البلاغات المعلقة"
+  },
+  "actions": {
+    "approve": "موافقة",
+    "reject": "رفض",
+    "ban": "حظر الحساب",
+    "suspend": "تعليق الحساب",
+    "warn": "تحذير",
+    "delete": "حذف",
+    "restore": "استعادة"
+  },
+  "userManagement": {
+    "search": "البحث عن مستخدمين...",
+    "role": "الصلاحية",
+    "status": "الحالة",
+    "joinedDate": "تاريخ الانضمام",
+    "actions": "الإجراءات"
+  },
+  "reports": {
+    "pending": "معلقة",
+    "reviewed": "تمت مراجعتها",
+    "resolved": "تم حلها",
+    "reason": "السبب",
+    "reportedBy": "مبلّغ بواسطة",
+    "reportedContent": "المحتوى المبلّغ عنه"
+  }
+}

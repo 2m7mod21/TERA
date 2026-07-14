@@ -2,44 +2,16 @@
 
 import { auth } from "@/server/auth/config";
 import { prisma } from "@/lib/db";
+import { FeedEngine } from "@/server/services/feed-engine/feed-engine.service";
 
 // ─── Ranked Feed ──────────────────────────────────────────────────────────────
 
-function freshnessScore(createdAt: Date): number {
-  const ageHours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
-  // Exponential decay: half-life = 3 hours
-  return Math.pow(0.5, ageHours / 3);
-}
-
-function rankPost(post: any, followingIds: Set<string>): number {
-  const reactions = post.reactions?.length ?? 0;
-  const comments = post._count?.comments ?? 0;
-  const freshness = freshnessScore(post.createdAt);
-
-  let score = 0;
-  score += reactions * 3;
-  score += comments * 5;
-  score += freshness * 100;
-
-  // Relationship boost: following the author
-  if (followingIds.has(post.userId)) score *= 1.5;
-
-  // Media boost
-  try {
-    const media = JSON.parse(post.mediaUrls || "[]");
-    if (media.length > 0) score *= 1.2;
-  } catch { /* ignore */ }
-
-  // Video boost
-  if (post.type === "VIDEO") score *= 1.3;
-
-  // Long-form boost
-  if ((post.content?.length ?? 0) > 200) score *= 1.1;
-
-  return score;
-}
-
-export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent" = "foryou", limit = 12) {
+export async function getFeedPosts(
+  cursor?: string,
+  feedType: "foryou" | "recent" = "foryou",
+  limit = 12,
+  sessionContext?: { deviceType?: "mobile" | "desktop"; sessionDurationSec?: number }
+) {
   const session = await auth();
 
   const blockedIds = session?.user?.id
@@ -47,12 +19,6 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
         .findMany({ where: { blockerId: session.user.id }, select: { blockedId: true } })
         .then((r: { blockedId: string }[]) => r.map((b) => b.blockedId))
     : [];
-
-  const followingIds = session?.user?.id
-    ? await prisma.follow
-        .findMany({ where: { followerId: session.user.id }, select: { followeeId: true } })
-        .then((r: { followeeId: string }[]) => new Set(r.map((f) => f.followeeId)))
-    : new Set<string>();
 
   // Visibility logic: Author can always see their own posts of any visibility. Others can see PUBLIC and FRIENDS.
   const where: any = {
@@ -99,6 +65,7 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
   };
 
   if (feedType === "recent") {
+    // ── Recent mode: strict chronological, NEVER altered by algorithm ──
     const posts = await prisma.post.findMany({
       where,
       take: limit + 1,
@@ -114,28 +81,53 @@ export async function getFeedPosts(cursor?: string, feedType: "foryou" | "recent
 
     return { posts: data, nextCursor };
   } else {
-    // Fetch a larger pool for ranking then slice
-    const pool = await prisma.post.findMany({
-      where,
-      take: 60,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
-      orderBy: { createdAt: "desc" },
-      include: commonIncludes,
-    });
+    // ── For You mode: two-stage recommendation engine ──
+    if (!session?.user?.id) {
+      // Unauthenticated fallback: simple recent feed from trending candidates
+      const posts = await prisma.post.findMany({
+        where,
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+        orderBy: { createdAt: "desc" },
+        include: commonIncludes,
+      });
+      const hasMore = posts.length > limit;
+      const data = posts.slice(0, limit);
+      return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id : null };
+    }
 
-    // Rank
-    const ranked = pool
-      .map((p: any) => ({ ...p, _score: rankPost(p, followingIds) }))
-      .sort((a: any, b: any) => b._score - a._score);
+    try {
+      const rankedPosts = await FeedEngine.getRankedFeed(
+        session.user.id,
+        limit,
+        sessionContext
+      );
 
-    const hasMore = ranked.length > limit;
-    const data = ranked.slice(0, limit);
-    const nextCursor = hasMore ? pool[pool.length - 1]?.id : null;
-
-    return { posts: data, nextCursor };
+      // Note: cursor-based pagination is handled by the candidate pool size.
+      // For production, pass cursor into candidateGenerator to offset queries.
+      return {
+        posts: rankedPosts,
+        nextCursor: rankedPosts.length >= limit ? rankedPosts[rankedPosts.length - 1]?.id ?? null : null,
+      };
+    } catch (error) {
+      console.error("[FeedEngine] Error in getRankedFeed, falling back to recent:", error);
+      // Graceful fallback to recency
+      const posts = await prisma.post.findMany({
+        where,
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0,
+        orderBy: { createdAt: "desc" },
+        include: commonIncludes,
+      });
+      const hasMore = posts.length > limit;
+      const data = posts.slice(0, limit);
+      return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null };
+    }
   }
 }
+
 
 // ─── Suggested Users ──────────────────────────────────────────────────────────
 

@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "friends": "Amis",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "watch": "Regarder",
+    "saved": "Enregistrés",
+    "search": "Rechercher sur TERA...",
+    "admin": "Administration",
+    "viewProfile": "Voir le profil",
+    "settings": "Paramètres",
+    "switchAccount": "Changer de compte",
+    "addAccount": "Ajouter un compte",
+    "signOut": "Se déconnecter",
+    "moreOptions": "Plus d'options"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "share": "Partager",
+    "report": "Signaler",
+    "hide": "Masquer",
+    "block": "Bloquer",
+    "follow": "Suivre",
+    "unfollow": "Ne plus suivre",
+    "like": "J'aime",
+    "comment": "Commenter",
+    "submit": "Soumettre",
+    "loading": "Chargement...",
+    "seeMore": "Voir plus",
+    "seeLess": "Voir moins",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "done": "Terminé",
+    "retry": "Réessayer",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "upload": "Télécharger",
+    "remove": "Supprimer",
+    "apply": "Appliquer",
+    "reset": "Réinitialiser",
+    "search": "Rechercher",
+    "clear": "Effacer"
+  },
+  "time": {
+    "justNow": "À l'instant",
+    "minutesAgo": "{count, plural, one {Il y a # minute} other {Il y a # minutes}}",
+    "hoursAgo": "{count, plural, one {Il y a # heure} other {Il y a # heures}}",
+    "daysAgo": "{count, plural, one {Il y a # jour} other {Il y a # jours}}",
+    "weeksAgo": "{count, plural, one {Il y a # semaine} other {Il y a # semaines}}",
+    "monthsAgo": "{count, plural, one {Il y a # mois} other {Il y a # mois}}",
+    "yearsAgo": "{count, plural, one {Il y a # an} other {Il y a # ans}}"
+  },
+  "language": {
+    "label": "Langue",
+    "select": "Choisir la langue",
+    "en": "Anglais",
+    "ar": "Arabe",
+    "fr": "Français",
+    "changed": "Langue changée en {language}"
+  },
+  "theme": {
+    "dark": "Sombre",
+    "light": "Clair",
+    "system": "Système"
+  },
+  "status": {
+    "online": "En ligne",
+    "offline": "Hors ligne",
+    "away": "Absent"
+  },
+  "counts": {
+    "followers": "{count, plural, one {# abonné} other {# abonnés}}",
+    "following": "{count} abonnements",
+    "posts": "{count, plural, one {# publication} other {# publications}}",
+    "likes": "{count, plural, one {# j'aime} other {# j'aimes}}",
+    "comments": "{count, plural, one {# commentaire} other {# commentaires}}"
+  },
+  "empty": {
+    "noResults": "Aucun résultat trouvé",
+    "noContent": "Rien ici pour l'instant"
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "tabs": {
+    "forYou": "For You",
+    "recent": "Recent"
+  },
+  "composer": {
+    "placeholder": "What's on your mind, {name}?",
+    "addPhoto": "Photo/Video",
+    "addFeeling": "Feeling",
+    "addLocation": "Location",
+    "addPoll": "Poll",
+    "post": "Post",
+    "posting": "Posting...",
+    "editPost": "Edit Post",
+    "update": "Update",
+    "locationPlaceholder": "Where are you? (e.g. Paris, France)",
+    "pollPlaceholder": "Ask a question...",
+    "pollOption": "Option {number}",
+    "addOption": "+ Add option",
+    "charRemaining": "{count, plural, one {# character remaining} other {# characters remaining}}",
+    "feeling": "— feeling {feeling}",
+    "feelings": {
+      "happy": "😄 Happy",
+      "sad": "😢 Sad",
+      "loved": "😍 Loved",
+      "excited": "🎉 Excited",
+      "cool": "😎 Cool",
+      "frustrated": "😤 Frustrated",
+      "tired": "😴 Tired",
+      "celebrating": "🥳 Celebrating"
+    },
+    "audience": {
+      "public": "Public",
+      "publicDesc": "Anyone",
+      "friends": "Friends Only",
+      "friendsDesc": "Followers only",
+      "private": "Only Me",
+      "privateDesc": "Just you"
+    }
+  },
+  "post": {
+    "like": "Like",
+    "comment": "Comment",
+    "share": "Share",
+    "save": "Save",
+    "unsave": "Unsave",
+    "repost": "Repost",
+    "reposted": "{name} reposted",
+    "undoRepost": "Undo Repost",
+    "quotePost": "Quote Post",
+    "quoting": "Quoting...",
+    "addThoughts": "Add your thoughts...",
+    "viewPost": "View Post",
+    "editPost": "Edit Post",
+    "deletePost": "Delete Post",
+    "hidePost": "Hide Post",
+    "reportPost": "Report Post",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!",
+    "shared": "Shared!",
+    "shareToFeed": "Share to Feed",
+    "seeFewer": "See fewer posts like this",
+    "sponsored": "Sponsored",
+    "pinned": "Pinned",
+    "deleted": "Post deleted",
+    "confirmDelete": "Are you sure you want to delete this post?",
+    "edited": "edited",
+    "feeling": "se feels {feeling}",
+    "votes": "{count, plural, one {# vote} other {# votes}}",
+    "commentsCount": "{count, plural, one {# comment} other {# comments}}",
+    "views": "{count, plural, one {# view} other {# views}}",
+    "repostsCount": "{count, plural, one {# repost} other {# reposts}}",
+    "loved": "Loved",
+    "love": "Love",
+    "cancel": "Cancel",
+    "saveBtn": "Save",
+    "confirmDeleteText": "Are you sure you want to delete this post? This action cannot be undone.",
+    "visibility": {
+      "public": "Public",
+      "friends": "Friends Only",
+      "private": "Only Me"
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "writeComment": "Write a comment...",
+    "reply": "Reply",
+    "replies": "{count, plural, one {# reply} other {# replies}}",
+    "viewReplies": "View {count, plural, one {# reply} other {# replies}}",
+    "hideReplies": "Hide replies",
+    "empty": "Be the first to comment",
+    "deleteComment": "Delete comment",
+    "deletedComment": "This comment was deleted.",
+    "pinnedComment": "Pinned comment",
+    "opLabel": "OP",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "writeReply": "Write a reply...",
+    "top": "Top",
+    "newest": "Newest"
+  },
+  "empty": {
+    "title": "Your feed is empty",
+    "subtitle": "Follow people to see their posts here",
+    "explore": "Explore"
+  },
+  "stories": {
+    "yourStory": "Your Story",
+    "yourStoryAuthor": "Your Story",
+    "newStory": "New Story",
+    "mediaStory": {
+      "title": "Media Story",
+      "desc": "Upload a photo or short video"
+    },
+    "textStory": {
+      "title": "Text Story",
+      "desc": "Write a colorful, stylized thought"
+    },
+    "typeWords": "Type words here...",
+    "audience": "Audience",
+    "public": "PUBLIC",
+    "followers": "FOLLOWERS",
+    "back": "Back",
+    "publish": "Post Story",
+    "publishing": "Publishing...",
+    "views": "{count, plural, one {# view} other {# views}}",
+    "viewers": "Story Viewers ({count})",
+    "noViewers": "No views yet. Share this story to start gaining reach!",
+    "expiresAt": "Expires {time}",
+    "sendReply": "Send reply to {username}...",
+    "draw": "Draw",
+    "sticker": "Sticker",
+    "drawing": {
+      "clear": "Clear",
+      "save": "Save",
+      "cancel": "Cancel",
+      "pen": "Pen",
+      "neon": "Neon",
+      "highlighter": "Highlighter"
+    },
+    "addSticker": "Add Sticker",
+    "placeholder": {
+      "poll": "Poll question...",
+      "username": "username",
+      "hashtag": "#topic",
+      "location": "Location / Question..."
+    },
+    "stickerTypes": {
+      "mention": "Mention",
+      "hashtag": "Hashtag",
+      "location": "Location",
+      "poll": "Poll",
+      "question": "Question"
+    },
+    "askMeAnything": "Ask me anything",
+    "typeSomething": "Type something...",
+    "close": "Close",
+    "add": "Add"
+  }
+}

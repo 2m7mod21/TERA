@@ -1,5 +1,4 @@
 import { getDatabaseInfo } from "@/server/actions/admin/system";
-import { requireAdminPage } from "@/lib/adminAuth";
 import { getAdminContext } from "@/lib/adminAuth";
 import { redirect } from "next/navigation";
 import DatabaseClient from "@/components/admin/DatabaseClient";

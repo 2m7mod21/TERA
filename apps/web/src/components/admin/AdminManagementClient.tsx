@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { UserCog, Plus, Shield, Trash2, Key } from "lucide-react";
+import { UserCog, Plus, Trash2 } from "lucide-react";
 import { changeAdminRole, inviteAdmin, removeAdmin } from "@/server/actions/admin/security";
 
 export default function AdminManagementClient({
