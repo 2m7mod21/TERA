@@ -19,9 +19,6 @@ COPY . .
 WORKDIR /app/apps/web
 RUN npx prisma generate
 
-# Compile TypeScript custom server to JS for fast, light startup
-RUN npx tsc --project tsconfig.server.json
-
 # Build Next.js app
 RUN npx next build
 
@@ -45,5 +42,5 @@ WORKDIR /app/apps/web
 
 EXPOSE 3000
 
-# Push DB schema then start server using lean Node.js
-CMD sh -c "npx prisma db push --accept-data-loss ; node server.js"
+# Push DB schema then start server using lean ts-node transpilation
+CMD sh -c "npx prisma db push --accept-data-loss ; npx ts-node --transpile-only --project tsconfig.server.json server.ts"
