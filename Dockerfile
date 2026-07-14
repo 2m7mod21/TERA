@@ -43,5 +43,5 @@ WORKDIR /app/apps/web
 
 EXPOSE 3000
 
-# Push DB schema then start server using Node.js ts-node/register and tsconfig-paths/register
-CMD sh -c "npx prisma db push --accept-data-loss ; TS_NODE_TRANSPILE_ONLY=true node -r ts-node/register -r tsconfig-paths/register server.ts"
+# Push DB schema then start server using npx ts-node with transpile-only option
+CMD sh -c "npx prisma db push --accept-data-loss ; npx ts-node --transpile-only --project tsconfig.server.json server.ts"
