@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "ts-node --project tsconfig.server.json server.ts",
-    "build": "next build",
-    "start": "next start",
+    "build": "prisma generate && prisma db push && next build",
+    "start": "ts-node --project tsconfig.server.json server.ts",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
     "test": "vitest run"
