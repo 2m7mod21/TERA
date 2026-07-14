@@ -1,9 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "cd apps/web && npm install && npm run build"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "cd apps/web && npm run start"
 healthcheckPath = "/"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
