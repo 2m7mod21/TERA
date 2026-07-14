@@ -464,10 +464,10 @@ export default function ProfilePageClient({ data }: { data: any }) {
   const visibleTabs = TABS.filter(t => !t.ownerOnly || isOwnProfile);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 mobile-pb-nav">
       {/* Cover Photo */}
-      <div className="relative h-64 md:h-80 w-full bg-gradient-to-br from-violet-900 via-purple-900 to-zinc-900 overflow-hidden">
-        {profile.coverUrl && <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover opacity-80" />}
+      <div className="relative h-40 sm:h-64 md:h-80 w-full bg-gradient-to-br from-violet-900 via-purple-900 to-zinc-900 overflow-hidden">
+        {profile.coverUrl && <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover opacity-80" loading="lazy" decoding="async" />}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 to-transparent" />
         <Link href="/" className="absolute top-4 left-4 glass px-4 py-2 rounded-xl text-sm font-medium text-zinc-300 hover:text-white transition-colors">
           ← Back to Feed
@@ -482,13 +482,13 @@ export default function ProfilePageClient({ data }: { data: any }) {
 
       {/* Profile Header */}
       <div className="max-w-4xl mx-auto px-4">
-        <div className="relative flex flex-col md:flex-row md:items-end gap-4 -mt-20 pb-6 border-b border-zinc-800">
+        <div className="relative flex flex-col sm:flex-row sm:items-end gap-3 -mt-12 sm:-mt-20 pb-6 border-b border-zinc-800">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-36 h-36 rounded-full border-4 border-zinc-950 bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden shadow-2xl">
+            <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full border-4 border-zinc-950 bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden shadow-2xl">
               {profile.avatarUrl
-                ? <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white">{profile.displayName.charAt(0)}</div>}
+                ? <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" loading="eager" />
+                : <div className="w-full h-full flex items-center justify-center text-3xl sm:text-5xl font-black text-white">{profile.displayName.charAt(0)}</div>}
             </div>
             {isOwnProfile && (
               <label className="absolute bottom-1 right-1 w-8 h-8 bg-zinc-800 border border-zinc-700 rounded-full flex items-center justify-center hover:bg-violet-600 transition-colors cursor-pointer">
@@ -518,7 +518,7 @@ export default function ProfilePageClient({ data }: { data: any }) {
             </div>
 
             {/* Stats */}
-            <div className="flex gap-6 mt-4 text-sm">
+            <div className="flex gap-4 sm:gap-6 mt-3 text-sm">
               <div><span className="font-bold text-white">{posts.length}</span> <span className="text-zinc-500">Posts</span></div>
               <button className="hover:underline text-left">
                 <span className="font-bold text-white">{followerCount}</span> <span className="text-zinc-500">Followers</span>
@@ -530,7 +530,7 @@ export default function ProfilePageClient({ data }: { data: any }) {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 md:pb-2 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:pb-2 flex-shrink-0 flex-wrap">
             {isOwnProfile ? (
               <button onClick={() => setEditOpen(true)}
                 className="flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-all">
@@ -551,11 +551,11 @@ export default function ProfilePageClient({ data }: { data: any }) {
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center justify-between border-b border-zinc-800 overflow-x-auto hide-scrollbar">
-          <div className="flex">
+        <div className="flex items-center justify-between border-b border-zinc-800 overflow-x-auto hide-scrollbar -mx-4 px-4">
+          <div className="flex min-w-max">
             {visibleTabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-4 py-4 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
                   tab === t.id ? "border-violet-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
                 }`}>
                 {t.icon}{t.label}

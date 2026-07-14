@@ -759,7 +759,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
             <div className="relative w-16 h-16 rounded-full bg-zinc-900 border-2 border-dashed border-zinc-700 hover:border-violet-500 flex items-center justify-center p-[2px] transition-all group-hover:scale-105 active:scale-95">
               <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-zinc-950">
                 {currentUser?.image ? (
-                  <img src={currentUser.image} alt="" className="w-full h-full object-cover" />
+                  <img src={currentUser.image} alt="" className="w-full h-full object-cover" loading="eager" />
                 ) : (
                   <span className="text-xl font-black text-violet-400">{currentUser?.name?.[0] ?? "U"}</span>
                 )}
@@ -791,7 +791,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
                   <div className="w-16 h-16 rounded-full overflow-hidden p-[2.5px] bg-zinc-950">
                     <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900">
                       {story.user.profile.avatarUrl ? (
-                        <img src={story.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        <img src={story.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <div className={`w-full h-full bg-gradient-to-tr ${gradient} flex items-center justify-center`}>
                           <span className="text-white font-extrabold text-sm">{story.user.profile.displayName[0]}</span>

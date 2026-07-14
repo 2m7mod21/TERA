@@ -759,7 +759,7 @@ export function PostCard({
   if (hidden || deleted) return null;
 
   return (
-    <article ref={cardRef} className="glass-light rounded-2xl overflow-hidden mb-3 card-hover fade-in border border-white/[0.04] hover:border-violet-500/20 transition-colors relative text-start">
+    <article ref={cardRef} className="post-card glass-light rounded-2xl overflow-hidden mb-3 card-hover fade-in border border-white/[0.04] hover:border-violet-500/20 transition-colors relative text-start">
       {/* Repost attribution header */}
       {post.type === "REPOST" && !post.content && (
         <div className="flex items-center gap-1.5 px-4 pt-3 pb-1 text-xs text-zinc-500 font-medium border-b border-white/[0.02] bg-white/[0.01]">
@@ -774,7 +774,7 @@ export function PostCard({
           <Link href={`/${username}`}>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden ring-2 ring-transparent ring-offset-zinc-950 ring-offset-2 hover:ring-violet-500/50 transition-all">
               {avatar
-                ? <img src={avatar} alt={displayName} className="w-full h-full object-cover" />
+                ? <img src={avatar} alt={displayName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 : <span className="w-full h-full flex items-center justify-center text-white font-bold text-sm">{displayName[0]}</span>}
             </div>
           </Link>
@@ -856,7 +856,7 @@ export function PostCard({
               </div>
             ) : (
               <div key={i} className="relative overflow-hidden" style={{ paddingBottom: mediaUrls.length === 1 ? "56.25%" : "100%" }}>
-                <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
                 {mediaUrls.length > 4 && i === 3 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <span className="text-white text-2xl font-bold">+{mediaUrls.length - 4}</span>
@@ -1186,6 +1186,28 @@ export default function HomeFeed({
     <div className="min-h-screen bg-zinc-950">
       <TopNav user={user} notifCount={notifCount} />
 
+      {/* Mobile Bottom Nav Bar */}
+      <nav className="mobile-bottom-nav md:hidden" aria-label="Mobile navigation">
+        {[
+          { href: "/", icon: Home },
+          { href: "/explore", icon: Users },
+          { href: "/messages", icon: MessageCircle },
+          { href: "/notifications", icon: Bell, badge: notifCount },
+          { href: "/reels", icon: Film },
+        ].map(({ href, icon: Icon, badge }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex-1 flex flex-col items-center justify-center relative text-zinc-500 hover:text-violet-400 transition-colors py-2"
+          >
+            <Icon className="w-6 h-6" />
+            {!!badge && badge > 0 && (
+              <span className="notif-badge">{badge > 9 ? "9+" : badge}</span>
+            )}
+          </Link>
+        ))}
+      </nav>
+
       <div className="flex max-w-[1280px] mx-auto pt-14">
         {/* ── Left Sidebar ── */}
         <aside className="hidden lg:flex flex-col fixed left-0 top-14 h-[calc(100vh-56px)] w-72 px-3 py-4 overflow-y-auto z-30">
@@ -1255,7 +1277,7 @@ export default function HomeFeed({
         </aside>
 
         {/* ── Center Feed ── */}
-        <main className="flex-1 lg:ml-72 lg:mr-80 xl:mr-88 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
+        <main className="flex-1 lg:ml-72 lg:mr-80 xl:mr-88 min-h-screen pt-4 px-3 pb-10 mobile-pb-nav max-w-2xl mx-auto lg:mx-0">
           <Stories currentUser={user} stories={initialStories} />
 
           {/* Feed Toggle */}
