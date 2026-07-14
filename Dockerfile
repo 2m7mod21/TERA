@@ -43,7 +43,6 @@ COPY --from=builder /app/apps/web/tsconfig.json ./apps/web/
 COPY --from=builder /app/apps/web/tsconfig.server.json ./apps/web/
 COPY --from=builder /app/apps/web/src ./apps/web/src
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=builder /app/package.json ./
 
 WORKDIR /app/apps/web
@@ -51,4 +50,4 @@ WORKDIR /app/apps/web
 EXPOSE 3000
 
 # Push DB schema then start server
-CMD sh -c "npx prisma db push --accept-data-loss && node_modules/.bin/ts-node --project tsconfig.server.json server.ts"
+CMD sh -c "npx prisma db push --accept-data-loss && npx ts-node --project tsconfig.server.json server.ts"
