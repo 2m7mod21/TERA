@@ -33,6 +33,7 @@ ENV NODE_ENV=production
 
 # Copy root configuration and dependencies
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built web workspace
