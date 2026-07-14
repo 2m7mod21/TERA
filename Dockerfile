@@ -46,4 +46,4 @@ WORKDIR /app/apps/web
 EXPOSE 3000
 
 # Push DB schema then start server using lean Node.js
-CMD sh -c "npx prisma db push --accept-data-loss && node server.js"
+CMD sh -c "npx prisma db push --accept-data-loss ; node server.js"
