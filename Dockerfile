@@ -1,7 +1,6 @@
 # ─── Stage 1: Builder ─────────────────────────────────────────
 FROM node:20-alpine AS builder
 
-# Install system deps for Prisma + native modules
 RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
@@ -20,8 +19,10 @@ COPY . .
 WORKDIR /app/apps/web
 RUN npx prisma generate
 
-# Build Next.js (prisma db push runs during build via npm run build)
-# Skip db push in build — let start command handle it or use Railway's deploy hooks
+# Compile TypeScript custom server to JS for fast, light startup
+RUN npx tsc --project tsconfig.server.json
+
+# Build Next.js app
 RUN npx next build
 
 # ─── Stage 2: Runner ──────────────────────────────────────────
@@ -33,21 +34,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy everything needed to run
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
-COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/
-COPY --from=builder /app/apps/web/prisma ./apps/web/prisma
-COPY --from=builder /app/apps/web/server.ts ./apps/web/
-COPY --from=builder /app/apps/web/tsconfig.json ./apps/web/
-COPY --from=builder /app/apps/web/tsconfig.server.json ./apps/web/
-COPY --from=builder /app/apps/web/src ./apps/web/src
-COPY --from=builder /app/node_modules ./node_modules
+# Copy root configuration and dependencies
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy the built web workspace
+COPY --from=builder /app/apps/web ./apps/web
 
 WORKDIR /app/apps/web
 
 EXPOSE 3000
 
-# Push DB schema then start server
-CMD sh -c "npx prisma db push --accept-data-loss && npx ts-node --project tsconfig.server.json server.ts"
+# Push DB schema then start server using lean Node.js
+CMD sh -c "npx prisma db push --accept-data-loss && node server.js"
