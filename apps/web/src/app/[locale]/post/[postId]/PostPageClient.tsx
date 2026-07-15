@@ -97,9 +97,9 @@ export default function PostPageClient({
     <div className="min-h-screen bg-zinc-950">
       <TopNav user={user} />
 
-      <div className="flex max-w-[1280px] mx-auto pt-14">
+      <div className="flex max-w-[1280px] mx-auto pt-14 px-4 justify-between gap-6">
         {/* ── Left Sidebar ── */}
-        <aside className="hidden lg:flex flex-col fixed left-0 top-14 h-[calc(100vh-56px)] w-72 px-3 py-4 overflow-y-auto z-30">
+        <aside className="hidden lg:flex flex-col sticky top-14 h-[calc(100vh-56px)] w-72 px-3 py-4 overflow-y-auto z-30 flex-shrink-0">
           <Link
             href={user?.username ? `/${user.username}` : "#"}
             className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-zinc-800/60 transition-all mb-2 group"
@@ -166,7 +166,7 @@ export default function PostPageClient({
         </aside>
 
         {/* ── Center Content ── */}
-        <main className="flex-1 lg:ml-72 lg:mr-80 xl:mr-88 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
+        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 max-w-2xl">
           {/* Back link */}
           <Link
             href="/"
@@ -215,7 +215,7 @@ export default function PostPageClient({
         </main>
 
         {/* ── Right Sidebar ── */}
-        <aside className="hidden lg:block fixed right-0 top-14 h-[calc(100vh-56px)] w-80 xl:w-88 px-4 py-4 overflow-y-auto z-30">
+        <aside className="hidden lg:block sticky top-14 h-[calc(100vh-56px)] w-80 xl:w-88 px-4 py-4 overflow-y-auto z-30 flex-shrink-0">
           <RightSidebar suggested={suggested} trending={trending} active={active} />
         </aside>
       </div>
