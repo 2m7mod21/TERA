@@ -26,16 +26,15 @@ export async function getFeedWeightProfile(profileName = "default") {
   const configs = await db.feedWeightConfig.findMany({
     where: { profileName },
     orderBy: { componentKey: "asc" },
-    include: {
-      auditLogs: {
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: { admin: { include: { profile: true } } },
-      },
-    },
   });
 
-  return { profileName, configs };
+  // Map database field weightValue to value for frontend compatibility
+  const mappedConfigs = configs.map((c: any) => ({
+    ...c,
+    value: c.weightValue,
+  }));
+
+  return { profileName, configs: mappedConfigs };
 }
 
 /**
@@ -66,12 +65,12 @@ export async function saveFeedWeightProfile(
     });
 
     if (existing) {
-      const oldValue = existing.value;
+      const oldValue = existing.weightValue;
       if (Math.abs(oldValue - value) < 0.000001) continue; // no change
 
       await db.feedWeightConfig.update({
         where: { id: existing.id },
-        data: { value, updatedAt: new Date() },
+        data: { weightValue: value, updatedAt: new Date() },
       });
 
       await db.feedWeightAuditLog.create({
@@ -81,20 +80,14 @@ export async function saveFeedWeightProfile(
           oldValue,
           newValue: value,
           adminId: ctx.userId,
-          reason: "Admin save via dashboard",
         },
       });
     } else {
-      const meta = DEFAULT_WEIGHT_ENTRIES.find((e) => e.componentKey === componentKey);
       await db.feedWeightConfig.create({
         data: {
           profileName,
           componentKey,
-          value,
-          description: meta?.description ?? "",
-          minValue: meta?.minValue ?? 0,
-          maxValue: meta?.maxValue ?? 1,
-          isActive: true,
+          weightValue: value,
         },
       });
     }
@@ -125,16 +118,15 @@ export async function resetFeedWeightProfile(profileName: string) {
     if (existing) {
       await db.feedWeightConfig.update({
         where: { id: existing.id },
-        data: { value: entry.value, updatedAt: new Date() },
+        data: { weightValue: entry.value, updatedAt: new Date() },
       });
       await db.feedWeightAuditLog.create({
         data: {
           profileName,
           componentKey: entry.componentKey,
-          oldValue: existing.value,
+          oldValue: existing.weightValue,
           newValue: entry.value,
           adminId: ctx.userId,
-          reason: "Reset to defaults",
         },
       });
     } else {
@@ -142,11 +134,7 @@ export async function resetFeedWeightProfile(profileName: string) {
         data: {
           profileName,
           componentKey: entry.componentKey,
-          value: entry.value,
-          description: entry.description,
-          minValue: entry.minValue,
-          maxValue: entry.maxValue,
-          isActive: true,
+          weightValue: entry.value,
         },
       });
     }
@@ -176,11 +164,7 @@ export async function createWeightProfile(name: string) {
       data: {
         profileName: name,
         componentKey: entry.componentKey,
-        value: entry.value,
-        description: entry.description,
-        minValue: entry.minValue,
-        maxValue: entry.maxValue,
-        isActive: true,
+        weightValue: entry.value,
       },
     });
   }
@@ -203,10 +187,23 @@ export async function getFeedWeightAuditLog(profileName?: string, limit = 50) {
 
   const logs = await db.feedWeightAuditLog.findMany({
     where: profileName ? { profileName } : {},
-    orderBy: { createdAt: "desc" },
+    orderBy: { changedAt: "desc" },
     take: limit,
-    include: { admin: { include: { profile: true } } },
   });
 
-  return logs;
+  const adminIds = Array.from(new Set(logs.map((l: any) => l.adminId))) as string[];
+  const admins = await prisma.user.findMany({
+    where: { id: { in: adminIds } },
+    select: { id: true, profile: { select: { displayName: true } } },
+  });
+
+  const adminMap = new Map(admins.map((a) => [a.id, a]));
+
+  const mappedLogs = logs.map((log: any) => ({
+    ...log,
+    createdAt: log.changedAt,
+    admin: adminMap.get(log.adminId),
+  }));
+
+  return mappedLogs;
 }

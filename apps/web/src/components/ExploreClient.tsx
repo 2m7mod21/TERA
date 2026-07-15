@@ -6,7 +6,7 @@ import {
   Search, UserPlus, UserCheck, TrendingUp, Hash, FileText,
   Users, X, Clock, ArrowRight, Flame, Filter, ChevronDown,
   Play, Image as ImageIcon, MessageSquare,
-  Globe, Heart,
+  Globe, Heart, Verified,
 } from "lucide-react";
 import { followUser, unfollowUser } from "@/server/actions/social";
 import { searchAll, getSearchSuggestions } from "@/server/actions/search";
@@ -63,7 +63,7 @@ function UserCard({ user, currentUserId }: { user: any; currentUserId: string })
           <div className="flex items-center gap-1.5">
             <p className="font-semibold text-sm text-zinc-100 hover:text-violet-400 transition-colors truncate">{profile?.displayName}</p>
             {actualUser?.verifiedBadge && (
-              <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold" title="Verified">✓</span>
+              <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" title="Verified" />
             )}
           </div>
         </Link>

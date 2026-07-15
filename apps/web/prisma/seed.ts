@@ -388,8 +388,8 @@ async function main() {
   for (const w of feedWeightDefaults) {
     await db.feedWeightConfig.upsert({
       where: { profileName_componentKey: { profileName: "default", componentKey: w.componentKey } },
-      update: { value: w.value },
-      create: { profileName: "default", ...w, isActive: true },
+      update: { weightValue: w.value },
+      create: { profileName: "default", componentKey: w.componentKey, weightValue: w.value },
     });
   }
 

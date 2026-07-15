@@ -6,6 +6,8 @@ import { locales, isRTL } from "@/i18n/config";
 import "../globals.css";
 import { Providers } from "@/lib/providers";
 
+import type { Viewport } from "next";
+
 export const metadata: Metadata = {
   title: "TERA | Next-Gen Social Media",
   description: "Connect, share, and monetize with the most advanced full-stack social media platform.",
@@ -18,6 +20,13 @@ export const metadata: Metadata = {
       fr: "/fr",
     },
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 interface LayoutProps {

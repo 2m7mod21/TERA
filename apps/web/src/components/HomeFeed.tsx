@@ -22,7 +22,7 @@ import {
   MessageSquare, Send, MoreHorizontal, Loader2,
   X, User, Bookmark, Hash, Share2, Flag, EyeOff, Edit3, Trash2,
   Pin, Copy, ChevronDown, ChevronUp, Check, Globe, Lock, Users2,
-  BarChart2, Heart, Repeat2,
+  BarChart2, Heart, Repeat2, Verified,
 } from "lucide-react";
 import ReactionsModal from "./ReactionsModal";
 import ReportModal from "@/components/ReportModal";
@@ -201,7 +201,7 @@ export function CommentItem({
               <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                 <span className="font-semibold text-xs text-violet-400">{displayName}</span>
                 {comment.user?.verifiedBadge && (
-                  <span className="text-blue-400 text-[11px]" title="Verified">✓</span>
+                  <Verified className="w-3.5 h-3.5 text-violet-400 fill-violet-400/20" title="Verified" />
                 )}
                 {comment.user?.isAdmin && (
                   <span className="bg-amber-500/10 text-amber-400 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Admin">{tCommon("nav.admin")}</span>
@@ -927,7 +927,7 @@ export function PostCard({
               <Link href={`/${username}`}>
                 <p className="font-semibold text-[14px] text-zinc-100 hover:text-violet-400 transition-colors leading-tight">{displayName}</p>
               </Link>
-              {displayPost.user?.verifiedBadge && <span className="text-blue-400 text-xs">✓</span>}
+              {displayPost.user?.verifiedBadge && <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" title="Verified" />}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5 whitespace-nowrap overflow-x-auto max-w-full">
               <ClientTime date={displayPost.createdAt} />

@@ -91,6 +91,7 @@ export async function updateProfile(data: {
 
     const profile = await prisma.profile.findUnique({ where: { userId: session.user.id } });
     revalidatePath(`/${profile?.username}`);
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("Update profile Action error:", error);

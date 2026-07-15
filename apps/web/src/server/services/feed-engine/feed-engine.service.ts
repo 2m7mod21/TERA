@@ -42,20 +42,19 @@ export interface SessionContext {
 
 export class FeedEngine {
 
-  /** Load weight profile from DB. Falls back to defaults on error. */
   static async loadWeights(profileName = "default"): Promise<FeedWeights> {
     try {
       const db = prisma as any;
       const configs = await db.feedWeightConfig.findMany({
-        where: { profileName, isActive: true },
-        select: { componentKey: true, value: true },
+        where: { profileName },
+        select: { componentKey: true, weightValue: true },
       });
 
       if (!configs || configs.length === 0) return DEFAULT_WEIGHTS;
 
       const overrides: Partial<FeedWeights> = {};
       for (const c of configs) {
-        (overrides as any)[c.componentKey] = c.value;
+        (overrides as any)[c.componentKey] = c.weightValue;
       }
       return { ...DEFAULT_WEIGHTS, ...overrides };
     } catch {

@@ -14,6 +14,7 @@ import {
   markNotificationAsRead, markAllRead, deleteNotification, getNotifications,
 } from "@/server/actions/notifications";
 import { playSound } from "@/lib/sounds";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 let socket: Socket | null = null;
 
@@ -301,6 +302,9 @@ export default function NotificationBell({ currentUserId, initialCount = 0 }: No
   const dropRef = useRef<HTMLDivElement>(null);
   const seenIds = useRef(new Set<string>());
   const [badgeAnimate, setBadgeAnimate] = useState(false);
+
+  // Register service worker + subscribe to push notifications
+  usePushNotifications({ userId: currentUserId });
 
   // Load notifications when dropdown opens
   const loadNotifs = useCallback(async () => {

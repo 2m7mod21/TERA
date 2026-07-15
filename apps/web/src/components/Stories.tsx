@@ -197,10 +197,10 @@ function StoryViewer({
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 select-none animate-fade-in">
-      <div className="relative w-full max-w-md h-full md:max-h-[85vh] md:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between bg-zinc-950">
+      <div className="relative w-full max-w-md h-[100dvh] md:h-full md:max-h-[85vh] md:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between bg-zinc-950">
         
         {/* Progress header logic */}
-        <div className="absolute top-4 left-4 right-4 z-50">
+        <div className="absolute top-4 left-4 right-4 z-50 pt-[env(safe-area-inset-top,0px)]">
           <div className="flex gap-1.5 mb-3">
             {localStories.map((_, i) => (
               <div key={i} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden">
@@ -368,16 +368,16 @@ function StoryViewer({
         <div className={`absolute inset-y-0 ${locale === 'ar' ? 'left-0' : 'right-0'} w-1/4 z-30 cursor-pointer`} onClick={goNext} />
 
         {/* Bottom Panel */}
-        <div className="px-4 pb-6 pt-4 bg-gradient-to-t from-black via-black/40 to-transparent z-40">
+        <div className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-4 bg-gradient-to-t from-black via-black/40 to-transparent z-40">
           {!isOwn && (
             <>
               {/* Reactions array */}
-              <div className="flex gap-2.5 justify-center mb-3.5">
+              <div className="flex gap-1.5 md:gap-2.5 justify-center flex-wrap mb-3.5">
                 {REACTION_EMOJIS.map(emoji => (
                   <button
                     key={emoji}
                     onClick={() => handleReact(emoji)}
-                    className="text-2xl hover:scale-125 hover:-translate-y-1 active:scale-95 transition-all w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur"
+                    className="text-xl md:text-2xl hover:scale-125 hover:-translate-y-1 active:scale-95 transition-all w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 backdrop-blur"
                   >
                     {emoji}
                   </button>
@@ -749,7 +749,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
 
       {/* Main Tray Container */}
       <div className="glass-light rounded-3xl p-4 shadow-xl border border-white/[0.04]">
-        <div className="flex gap-3.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        <div className="flex gap-3.5 overflow-x-auto pb-1 hide-scrollbar" style={{ scrollbarWidth: "none" }}>
           
           {/* Add story Card */}
           <div 
@@ -812,7 +812,7 @@ export default function Stories({ currentUser, stories = [] }: { currentUser: an
       {/* Story Creator Modal */}
       {creatorOpen && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/92 backdrop-blur p-4 select-none animate-fade-in">
-          <div className="relative w-full max-w-sm glass rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl scale-in flex flex-col justify-between max-h-[90vh] bg-zinc-950">
+          <div className="relative w-full max-w-sm glass rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl scale-in flex flex-col justify-between max-h-[90dvh] bg-zinc-950">
             
             {/* Header */}
             <div className="flex justify-between items-center px-4 py-3.5 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur">

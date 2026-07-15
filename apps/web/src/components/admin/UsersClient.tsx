@@ -2,9 +2,9 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import {
-  Search, ShieldAlert, Award, Loader2, X, Key, Shield, LogOut,
+  Search, ShieldAlert, Loader2, X, Key, Shield, LogOut,
   AlertCircle, FileText, MessageSquare, Globe, Heart, Activity,
-  Smartphone, User, AlertTriangle, ArrowUpDown
+  Smartphone, User, AlertTriangle, ArrowUpDown, Verified
 } from "lucide-react";
 import {
   getUsers, banUser, unbanUser, suspendUser, unsuspendUser,
@@ -247,7 +247,7 @@ export default function UsersClient({
                                 {u.profile?.displayName ?? "Unnamed"}
                               </p>
                               {u.verifiedBadge && (
-                                <Award className="w-3.5 h-3.5 text-blue-400 fill-blue-400/20" />
+                                <Verified className="w-3.5 h-3.5 text-violet-400 fill-violet-400/20" />
                               )}
                               {u.isAdmin && (
                                 <span className="px-1 text-[8px] border border-violet-500/30 bg-violet-500/10 text-violet-400 rounded">ADMIN</span>
@@ -392,7 +392,7 @@ export default function UsersClient({
 
                     <h3 className="font-bold text-white text-base mt-2 flex items-center justify-center gap-1">
                       {userDetails.profile?.displayName ?? "Unnamed"}
-                      {userDetails.verifiedBadge && <Award className="w-4 h-4 text-blue-400 fill-blue-400/20" />}
+                      {userDetails.verifiedBadge && <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" />}
                     </h3>
                     <p className="text-xs text-violet-400">@{userDetails.profile?.username ?? "username"}</p>
                     

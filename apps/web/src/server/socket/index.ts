@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "@/lib/db";
+import { sendPushToUser, buildPushPayload } from "@/lib/push";
 
 // userId -> Set of socketIds
 const activeConnections = new Map<string, Set<string>>();
@@ -12,11 +13,45 @@ export function getIO(): Server | null {
 }
 
 /** Emit a notification to a specific user (from any server action). */
-export function emitNotification(targetUserId: string, notification: unknown) {
+export function emitNotification(
+  targetUserId: string,
+  notification: any,
+  pushPayload?: { type?: string; senderName?: string; url?: string }
+) {
   if (_io) {
     _io.to(targetUserId).emit("notification:new", notification);
   }
+
+  try {
+    const ENTITY_LINKS_MAP: Record<string, (id: string) => string> = {
+      POST: (id) => `/post/${id}`,
+      COMMENT: (id) => `/post/${id}`,
+      USER: (id) => `/${id}`,
+      STORY: () => "/",
+      GROUP: (id) => `/groups/${id}`,
+      MESSAGE: (_id) => `/messages`,
+    };
+
+    const senderName =
+      pushPayload?.senderName ??
+      notification?.sender?.profile?.displayName ??
+      "TERA";
+    const type = pushPayload?.type ?? notification?.type ?? "SYSTEM";
+
+    let entityUrl = "/";
+    if (pushPayload?.url) {
+      entityUrl = pushPayload.url;
+    } else if (notification?.entityType && notification?.entityId) {
+      entityUrl = ENTITY_LINKS_MAP[notification.entityType]?.(notification.entityId) ?? "/";
+    }
+
+    const payload = buildPushPayload(type, senderName, entityUrl);
+    sendPushToUser(targetUserId, payload).catch(() => {});
+  } catch (err) {
+    console.error("[socket] Failed to send push fallback:", err);
+  }
 }
+
 
 export function initSocketServer(io: Server) {
   _io = io;

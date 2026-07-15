@@ -101,6 +101,7 @@ export const authConfig = {
           token.twoFactorEnabled = dbUser.twoFactorEnabled;
           token.isBanned = dbUser.isBanned;
           token.isSuspended = dbUser.isSuspended;
+          token.picture = dbUser.profile?.avatarUrl || "";
         }
       }
 
@@ -110,13 +111,24 @@ export const authConfig = {
         try {
           const freshUser = await prisma.user.findUnique({
             where: { id: token.userId as string },
-            select: { isBanned: true, isSuspended: true, isAdmin: true, verifiedBadge: true },
+            select: {
+              isBanned: true,
+              isSuspended: true,
+              isAdmin: true,
+              verifiedBadge: true,
+              profile: {
+                select: {
+                  avatarUrl: true
+                }
+              }
+            },
           });
           if (freshUser) {
             token.isBanned = freshUser.isBanned;
             token.isSuspended = freshUser.isSuspended;
             token.isAdmin = freshUser.isAdmin;
             token.verifiedBadge = freshUser.verifiedBadge;
+            token.picture = freshUser.profile?.avatarUrl || "";
           } else {
             // User was deleted — invalidate token
             return null as any;
@@ -142,6 +154,7 @@ export const authConfig = {
         session.user.twoFactorEnabled = token.twoFactorEnabled as boolean;
         session.user.isBanned = token.isBanned as boolean;
         session.user.isSuspended = token.isSuspended as boolean;
+        session.user.image = (token.picture || token.image) as string;
       }
       return session;
     },
@@ -202,6 +215,20 @@ export const authConfig = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? `__Secure-authjs.session-token` : `authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60, // 30 days persistent cookie
+      },
+    },
   },
 } satisfies NextAuthConfig;
 
