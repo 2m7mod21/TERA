@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/server/auth";
+import { auth } from "@/server/auth/config";
 import { prisma } from "@/lib/db";
 
 /** GET /api/push/vapid-key — Returns the public VAPID key for the client */
