@@ -1063,22 +1063,22 @@ export function PostCard({
       )}
 
       {/* Action bar */}
-      <div className="px-3 py-1 border-t border-zinc-800/50 flex items-center justify-between">
+      <div className="px-1 py-1 border-t border-zinc-800/50 flex items-center justify-between">
         {/* Love */}
         <button
           onClick={handleReact}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:bg-zinc-800 group ${myReaction ? "text-rose-500" : "text-zinc-500 hover:text-zinc-200"}`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-1 py-2 rounded-xl text-xs font-medium transition-all hover:bg-zinc-800 group ${myReaction ? "text-rose-500" : "text-zinc-500 hover:text-zinc-200"}`}
         >
           {myReaction
-            ? <Heart className="w-5 h-5 fill-rose-500 text-rose-500 animate-heartbeat" />
-            : <Heart className="w-5 h-5 text-zinc-500 transition-transform duration-200 group-hover:scale-110" />}
+            ? <Heart className="w-4.5 h-4.5 fill-rose-500 text-rose-500 animate-heartbeat" />
+            : <Heart className="w-4.5 h-4.5 text-zinc-500 transition-transform duration-200 group-hover:scale-110" />}
           <span>{myReaction ? t("post.loved") : t("post.love")}</span>
         </button>
 
         {/* Comment */}
         <button
           onClick={() => { if (onCommentClick) { onCommentClick(displayPost.id); } else { setShowComments(v => !v); } }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all"
+          className="flex-1 flex items-center justify-center gap-1.5 px-1 py-2 rounded-xl text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all"
         >
           <MessageSquare className="w-4 h-4" />
           <span>{tCommon("actions.comment")}</span>
@@ -1092,19 +1092,19 @@ export function PostCard({
             if (rect) setRepostMenuRect(rect);
             setShowRepostMenu(v => !v);
           }}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:bg-zinc-800 group ${isReposted ? "text-emerald-500" : "text-zinc-500 hover:text-zinc-200"}`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-1 py-2 rounded-xl text-xs font-medium transition-all hover:bg-zinc-800 group ${isReposted ? "text-emerald-500" : "text-zinc-500 hover:text-zinc-200"}`}
         >
-          <Repeat2 className={`w-5 h-5 ${isReposted ? "text-emerald-500" : "transition-transform duration-300 group-hover:rotate-180"}`} />
+          <Repeat2 className={`w-4 h-4 ${isReposted ? "text-emerald-500" : "transition-transform duration-300 group-hover:rotate-180"}`} />
           <span>{t("post.repost")}</span>
         </button>
 
         {/* Share */}
-        <div className="relative">
+        <div className="flex-1 relative flex items-center justify-center">
           <button
             onClick={() => { setShowShare(v => !v); setShowMenu(false); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all"
+            className="flex items-center justify-center gap-1.5 px-1 py-2 rounded-xl text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-all w-full"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4.5 h-4.5" />
             <span>{tCommon("actions.share")}</span>
           </button>
           {showShare && <ShareMenu post={displayPost} onClose={() => setShowShare(false)} />}
