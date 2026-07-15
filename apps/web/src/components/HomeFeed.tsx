@@ -1333,7 +1333,7 @@ export default function HomeFeed({
         ))}
       </nav>
 
-      <div className="flex max-w-[1280px] mx-auto pt-14 px-4 justify-between gap-6">
+      <div className="flex max-w-[1280px] mx-auto pt-14">
         {/* ── Left Sidebar ── */}
         <aside className="hidden lg:flex flex-col sticky top-14 h-[calc(100vh-56px)] w-72 px-3 py-4 overflow-y-auto z-30 flex-shrink-0">
           <Link
@@ -1402,7 +1402,7 @@ export default function HomeFeed({
         </aside>
 
         {/* ── Center Feed ── */}
-        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 mobile-pb-nav max-w-2xl">
+        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 mobile-pb-nav max-w-2xl mx-auto lg:mx-0">
           <Stories currentUser={user} stories={initialStories} />
 
           {/* Feed Toggle */}

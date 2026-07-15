@@ -97,7 +97,7 @@ export default function PostPageClient({
     <div className="min-h-screen bg-zinc-950">
       <TopNav user={user} />
 
-      <div className="flex max-w-[1280px] mx-auto pt-14 px-4 justify-between gap-6">
+      <div className="flex max-w-[1280px] mx-auto pt-14">
         {/* ── Left Sidebar ── */}
         <aside className="hidden lg:flex flex-col sticky top-14 h-[calc(100vh-56px)] w-72 px-3 py-4 overflow-y-auto z-30 flex-shrink-0">
           <Link
@@ -166,7 +166,7 @@ export default function PostPageClient({
         </aside>
 
         {/* ── Center Content ── */}
-        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 max-w-2xl">
+        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
           {/* Back link */}
           <Link
             href="/"
