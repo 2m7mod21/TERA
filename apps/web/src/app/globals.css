@@ -172,6 +172,22 @@ body {
   animation: heartbeat 0.45s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
+@keyframes heartburst {
+  0%   { opacity: 0; transform: scale(0.3); }
+  30%  { opacity: 1; transform: scale(1.25); }
+  60%  { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+}
+
 /* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .fade-in, .scale-in, .overlay-in, .animate-heartbeat, .skeleton {
