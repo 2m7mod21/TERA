@@ -168,7 +168,7 @@ export default function WatchClient({
         </aside>
 
         {/* ── Center Feed ── */}
-        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
+        <main className="flex-1 min-w-0 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
           <div className="flex items-center gap-2 mb-4 px-1">
             <Film className="w-5 h-5 text-violet-400" />
             <h1 className="text-lg font-bold text-zinc-100">Watch Feed</h1>

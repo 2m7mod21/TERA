@@ -166,7 +166,7 @@ export default function PostPageClient({
         </aside>
 
         {/* ── Center Content ── */}
-        <main className="flex-1 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
+        <main className="flex-1 min-w-0 min-h-screen pt-4 px-3 pb-10 max-w-2xl mx-auto lg:mx-0">
           {/* Back link */}
           <Link
             href="/"
