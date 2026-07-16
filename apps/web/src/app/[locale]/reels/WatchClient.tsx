@@ -214,14 +214,20 @@ function VideoItem({
   post,
   currentUserId,
   isActive,
+  shouldLoad,
+  preloadType,
   globalMuted,
   onMuteChange,
+  onProgress,
 }: {
   post: any;
   currentUserId: string;
   isActive: boolean;
+  shouldLoad: boolean;
+  preloadType: "auto" | "metadata" | "none";
   globalMuted: boolean;
   onMuteChange: (muted: boolean) => void;
+  onProgress?: (progress: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -276,10 +282,16 @@ function VideoItem({
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const update = () => setProgress(v.duration ? (v.currentTime / v.duration) * 100 : 0);
+    const update = () => {
+      const p = v.duration ? (v.currentTime / v.duration) * 100 : 0;
+      setProgress(p);
+      if (isActive && onProgress) {
+        onProgress(p);
+      }
+    };
     v.addEventListener("timeupdate", update);
     return () => v.removeEventListener("timeupdate", update);
-  }, []);
+  }, [isActive, onProgress]);
 
   const togglePlay = () => {
     const v = videoRef.current;
@@ -361,14 +373,14 @@ function VideoItem({
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       {/* Video */}
-      {videoUrl && (
+      {videoUrl && shouldLoad && (
         <video
           ref={videoRef}
           src={videoUrl}
           className="absolute inset-0 w-full h-full object-cover"
           loop
           playsInline
-          preload="auto"
+          preload={preloadType}
           muted={globalMuted}
           onClick={handleTap}
         />
@@ -572,15 +584,24 @@ export default function WatchClient({
   initialPosts: any[];
   initialCursor: string | null;
   user: any;
+  suggested?: any[];
+  trending?: any[];
+  active?: any[];
 }) {
   const [posts, setPosts] = useState<any[]>(initialPosts);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeProgress, setActiveProgress] = useState(0);
   const [globalMuted, setGlobalMuted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const currentUserId = user?.id ?? "";
   const router = useRouter();
+
+  // Reset activeProgress on slide change
+  useEffect(() => {
+    setActiveProgress(0);
+  }, [activeIndex]);
 
   // Infinite load
   const loadMore = useCallback(async () => {
@@ -677,25 +698,36 @@ export default function WatchClient({
         className="h-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
         style={{ scrollSnapType: "y mandatory" }}
       >
-        {posts.map((post, idx) => (
-          <div
-            key={post.id}
-            data-slide={idx}
-            className="w-full flex-shrink-0"
-            style={{
-              height: "100dvh",
-              scrollSnapAlign: "start",
-            }}
-          >
-            <VideoItem
-              post={post}
-              currentUserId={currentUserId}
-              isActive={activeIndex === idx}
-              globalMuted={globalMuted}
-              onMuteChange={setGlobalMuted}
-            />
-          </div>
-        ))}
+        {posts.map((post, idx) => {
+          const isCurrent = activeIndex === idx;
+          const isNext = idx === activeIndex + 1;
+          const isPrev = idx === activeIndex - 1;
+          const shouldLoad = isCurrent || isNext || isPrev;
+          const preloadType = isCurrent ? "auto" : (isNext && activeProgress > 50) ? "auto" : "metadata";
+
+          return (
+            <div
+              key={post.id}
+              data-slide={idx}
+              className="w-full flex-shrink-0"
+              style={{
+                height: "100dvh",
+                scrollSnapAlign: "start",
+              }}
+            >
+              <VideoItem
+                post={post}
+                currentUserId={currentUserId}
+                isActive={isCurrent}
+                shouldLoad={shouldLoad}
+                preloadType={preloadType}
+                globalMuted={globalMuted}
+                onMuteChange={setGlobalMuted}
+                onProgress={isCurrent ? setActiveProgress : undefined}
+              />
+            </div>
+          );
+        })}
 
         {/* Loading sentinel */}
         {loadingMore && (

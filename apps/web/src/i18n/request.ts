@@ -1,7 +1,8 @@
 import { getRequestConfig } from "next-intl/server";
 import { locales, defaultLocale } from "./config";
 
-export default getRequestConfig(async ({ requestLocale }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default getRequestConfig(async ({ requestLocale }): Promise<any> => {
   // Validate locale from routing
   let locale = await requestLocale;
   if (!locale || !locales.includes(locale as any)) {

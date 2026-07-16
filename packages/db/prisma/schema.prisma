@@ -284,6 +284,10 @@ model Post {
   reports      Report[]
   views        PostView[]
   hiddenBy     FeedHide[]
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([visibility, createdAt])
 }
 
 model PostView {

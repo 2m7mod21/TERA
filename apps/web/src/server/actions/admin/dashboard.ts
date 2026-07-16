@@ -1,8 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdmin, writeAuditLog } from "@/lib/adminAuth";
-import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/adminAuth";
 
 /** Refresh and cache platform stats into PlatformStat table */
 export async function refreshPlatformStats() {

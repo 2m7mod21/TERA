@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { ClipboardList, Search, RefreshCw, Key } from "lucide-react";
+import { Search } from "lucide-react";
 import { getAuditLogs } from "@/server/actions/admin/auditLog";
 
 export default function AuditLogsClient({

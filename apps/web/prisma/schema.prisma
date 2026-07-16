@@ -300,6 +300,10 @@ model Post {
   // Feed Algorithm relations
   feedImpressions FeedImpression[]             @relation("PostFeedImpressions")
   qualityCache    PostQualityCache?            @relation("PostQualityCacheRelation")
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([visibility, createdAt])
 }
 
 model PostView {

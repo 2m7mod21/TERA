@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
@@ -15,6 +16,8 @@ import PostComposer from "@/components/PostComposer";
 import RightSidebar from "@/components/RightSidebar";
 import VideoPlayer from "@/components/VideoPlayer";
 import CommentModal from "@/components/CommentModal";
+import VirtualFeed from "@/components/VirtualFeed";
+import SkeletonFeed, { SkeletonPost } from "@/components/SkeletonFeed";
 
 import {
   Home, Film, MessageCircle, Bell, Users,
@@ -182,9 +185,9 @@ export function CommentItem({
 
   return (
     <div className={`flex gap-2 ${depth > 0 ? "ms-8" : ""}`}>
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 overflow-hidden flex-shrink-0 mt-0.5">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 overflow-hidden flex-shrink-0 mt-0.5 relative">
         {avatar
-          ? <img src={avatar} className="w-full h-full object-cover" alt="" />
+          ? <Image src={avatar} width={32} height={32} className="w-full h-full object-cover" alt="" />
           : <span className="w-full h-full flex items-center justify-center text-white text-xs font-bold">{displayName[0]}</span>}
       </div>
       <div className="flex-1 min-w-0">
@@ -201,7 +204,9 @@ export function CommentItem({
               <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                 <span className="font-semibold text-xs text-violet-400">{displayName}</span>
                 {comment.user?.verifiedBadge && (
-                  <Verified className="w-3.5 h-3.5 text-violet-400 fill-violet-400/20" title="Verified" />
+                  <span title="Verified">
+                    <Verified className="w-3.5 h-3.5 text-violet-400 fill-violet-400/20" />
+                  </span>
                 )}
                 {comment.user?.isAdmin && (
                   <span className="bg-amber-500/10 text-amber-400 text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider" title="Admin">{tCommon("nav.admin")}</span>
@@ -328,7 +333,6 @@ function CommentPanel({
   currentUserId: string;
 }) {
   const t = useTranslations("feed");
-  const tCommon = useTranslations("common");
   const [comments, setComments] = useState<any[]>(initialComments ?? []);
   const [commentText, setCommentText] = useState("");
   const [sortBy, setSortBy] = useState<"relevant" | "newest">("relevant");
@@ -596,8 +600,7 @@ function OverflowMenu({
 }
 
 // ─── Professional Poll Display ────────────────────────────────────────────────
-function PollDisplay({ poll, currentUserId, postId }: { poll: any; currentUserId: string | null; postId: string }) {
-  const t = useTranslations("feed");
+function PollDisplay({ poll, currentUserId }: { poll: any; currentUserId: string | null }) {
 
   // Build initial optimistic state from server data
   const [opts, setOpts] = useState<{ id: string; text: string; count: number; myVote: boolean }[]>(() =>
@@ -632,7 +635,6 @@ function PollDisplay({ poll, currentUserId, postId }: { poll: any; currentUserId
 
     // Optimistic update — move vote instantly
     setOpts((prev) => {
-      const prevVotedCount = prev.find(o => o.myVote)?.count ?? 0;
       return prev.map((o) => {
         if (o.id === optId) return { ...o, count: o.count + 1, myVote: true };
         if (o.myVote)        return { ...o, count: Math.max(0, o.count - 1), myVote: false };
@@ -738,15 +740,16 @@ function PollDisplay({ poll, currentUserId, postId }: { poll: any; currentUserId
   );
 }
 
-export function PostCard({
+export const PostCard = React.memo(function PostCard({
   post,
   currentUserId,
-
   onCommentClick,
+  priority = false,
 }: {
   post: any;
   currentUserId: string;
   onCommentClick?: (postId: string) => void;
+  priority?: boolean;
 }) {
   const t = useTranslations("feed");
   const tCommon = useTranslations("common");
@@ -916,9 +919,9 @@ export function PostCard({
       <div className="flex items-center justify-between p-4 pb-3">
         <div className="flex items-center gap-3">
           <Link href={`/${username}`}>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden ring-2 ring-transparent ring-offset-zinc-950 ring-offset-2 hover:ring-violet-500/50 transition-all">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden ring-2 ring-transparent ring-offset-zinc-950 ring-offset-2 hover:ring-violet-500/50 transition-all relative">
               {avatar
-                ? <img src={avatar} alt={displayName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                ? <Image src={avatar} alt={displayName} width={40} height={40} className="w-full h-full object-cover" />
                 : <span className="w-full h-full flex items-center justify-center text-white font-bold text-sm">{displayName[0]}</span>}
             </div>
           </Link>
@@ -927,7 +930,11 @@ export function PostCard({
               <Link href={`/${username}`}>
                 <p className="font-semibold text-[14px] text-zinc-100 hover:text-violet-400 transition-colors leading-tight">{displayName}</p>
               </Link>
-              {displayPost.user?.verifiedBadge && <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" title="Verified" />}
+              {displayPost.user?.verifiedBadge && (
+                <span title="Verified">
+                  <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" />
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5 whitespace-nowrap overflow-x-auto max-w-full">
               <ClientTime date={displayPost.createdAt} />
@@ -1000,7 +1007,14 @@ export function PostCard({
               </div>
             ) : (
               <div key={i} className="relative overflow-hidden" style={{ paddingBottom: mediaUrls.length === 1 ? "56.25%" : "100%" }}>
-                <img src={url} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+                <Image
+                  src={url}
+                  alt=""
+                  fill
+                  sizes={mediaUrls.length === 1 ? "100vw" : "50vw"}
+                  priority={priority && i === 0}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
                 {mediaUrls.length > 4 && i === 3 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <span className="text-white text-2xl font-bold">+{mediaUrls.length - 4}</span>
@@ -1017,7 +1031,6 @@ export function PostCard({
         <PollDisplay
           poll={displayPost.poll}
           currentUserId={currentUserId}
-          postId={displayPost.id}
         />
       )}
 
@@ -1025,9 +1038,9 @@ export function PostCard({
       {post.type === "REPOST" && post.content && post.parentPost && (
         <div className="mx-4 my-2 p-3 bg-zinc-900/60 border border-white/[0.05] rounded-2xl">
           <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-5 h-5 rounded-full bg-zinc-700 overflow-hidden">
+            <div className="w-5 h-5 rounded-full bg-zinc-700 overflow-hidden relative">
               {post.parentPost.user?.profile?.avatarUrl
-                ? <img src={post.parentPost.user.profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ? <Image src={post.parentPost.user.profile.avatarUrl} alt="" width={20} height={20} className="w-full h-full object-cover" />
                 : <span className="w-full h-full flex items-center justify-center text-white text-[9px] font-bold">{post.parentPost.user?.profile?.displayName?.[0] ?? "U"}</span>}
             </div>
             <span className="text-xs font-semibold text-zinc-300">{post.parentPost.user?.profile?.displayName}</span>
@@ -1210,7 +1223,9 @@ export function PostCard({
       )}
     </article>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.post.id === nextProps.post.id && prevProps.post.updatedAt === nextProps.post.updatedAt;
+});
 
 // ─── Left Sidebar Nav ─────────────────────────────────────────────────────────
 const LEFT_NAV = [
@@ -1289,14 +1304,14 @@ export default function HomeFeed({
     setOpenCommentsPostId(commentsQueryId);
   }, [commentsQueryId]);
 
-  const handleOpenComments = (postId: string) => {
+  const handleOpenComments = useCallback((postId: string) => {
     setOpenCommentsPostId(postId);
     const params = new URLSearchParams(window.location.search);
     params.set("comments", postId);
     window.history.pushState(null, "", `?${params.toString()}`);
-  };
+  }, []);
 
-  const handleCloseComments = () => {
+  const handleCloseComments = useCallback(() => {
     setOpenCommentsPostId(null);
     const params = new URLSearchParams(window.location.search);
     if (params.has("comments")) {
@@ -1305,7 +1320,7 @@ export default function HomeFeed({
       const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
       window.history.pushState(null, "", newUrl);
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -1340,9 +1355,9 @@ export default function HomeFeed({
             href={user?.username ? `/${user.username}` : "#"}
             className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-zinc-800/60 transition-all mb-2 group"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden flex-shrink-0 relative">
               {user?.image
-                ? <img src={user.image} alt="" className="w-full h-full object-cover" />
+                ? <Image src={user.image} alt="" width={40} height={40} className="w-full h-full object-cover" />
                 : <span className="w-full h-full flex items-center justify-center text-white font-bold">{user?.name?.[0] ?? "U"}</span>}
             </div>
             <div className="min-w-0">
@@ -1423,34 +1438,43 @@ export default function HomeFeed({
 
           <PostComposer user={user} />
 
-          {posts.length === 0 && !loadingMore ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 rounded-full gradient-btn mx-auto flex items-center justify-center mb-4 opacity-60">
-                <Hash className="w-10 h-10 text-white" />
+          {posts.length === 0 ? (
+            loadingMore ? (
+              <SkeletonFeed />
+            ) : (
+              <div className="text-center py-20">
+                <div className="w-20 h-20 rounded-full gradient-btn mx-auto flex items-center justify-center mb-4 opacity-60">
+                  <Hash className="w-10 h-10 text-white" />
+                </div>
+                <p className="text-lg font-semibold text-zinc-300">Your feed is empty</p>
+                <p className="text-sm text-zinc-500 mt-1">Follow people to see their posts here</p>
+                <Link href="/explore" className="mt-4 inline-block gradient-btn text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
+                  Explore
+                </Link>
               </div>
-              <p className="text-lg font-semibold text-zinc-300">Your feed is empty</p>
-              <p className="text-sm text-zinc-500 mt-1">Follow people to see their posts here</p>
-              <Link href="/explore" className="mt-4 inline-block gradient-btn text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
-                Explore
-              </Link>
-            </div>
+            )
           ) : (
-            posts.map((post: any) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                currentUserId={currentUserId}
-                onCommentClick={handleOpenComments}
+            <>
+              <VirtualFeed
+                items={posts}
+                renderItem={(post: any, idx: number) => (
+                  <PostCard
+                    post={post}
+                    currentUserId={currentUserId}
+                    onCommentClick={handleOpenComments}
+                    priority={idx < 2}
+                  />
+                )}
               />
-            ))
+              {loadingMore && (
+                <div className="mt-3">
+                  <SkeletonPost />
+                </div>
+              )}
+            </>
           )}
 
           <div ref={sentinelRef} className="h-8" />
-          {loadingMore && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-            </div>
-          )}
           {!cursor && posts.length > 0 && (
             <p className="text-center text-xs text-zinc-600 pb-4">You've seen all posts ✓</p>
           )}

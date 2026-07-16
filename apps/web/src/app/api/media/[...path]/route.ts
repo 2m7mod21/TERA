@@ -27,6 +27,19 @@ export async function GET(
   const fileSize = stat.size;
   const ext = path.extname(fileName).toLowerCase();
 
+  // Strong ETag based on modified time and size
+  const etag = `W/"${stat.mtimeMs}-${fileSize}"`;
+  const ifNoneMatch = req.headers.get("if-none-match");
+  if (ifNoneMatch === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: {
+        "ETag": etag,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  }
+
   const MIME_TYPES: Record<string, string> = {
     ".mp4": "video/mp4",
     ".webm": "video/webm",
@@ -83,7 +96,8 @@ export async function GET(
         "Accept-Ranges": "bytes",
         "Content-Length": String(chunkSize),
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "ETag": etag,
       },
     });
   }
@@ -107,7 +121,8 @@ export async function GET(
       "Accept-Ranges": "bytes",
       "Content-Length": String(fileSize),
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "ETag": etag,
     },
   });
 }

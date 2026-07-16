@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { BarChart3, Users, TrendingUp, Compass, Activity, MapPin } from "lucide-react";
+import { Compass, Activity, MapPin } from "lucide-react";
 import { getAnalytics } from "@/server/actions/admin/analytics";
 
 type AnalyticsClientProps = {
@@ -22,7 +22,7 @@ export default function AnalyticsClient({ data, growth }: AnalyticsClientProps) 
   const [topPosts, setTopPosts] = useState(data.topPosts);
   const [locations, setLocations] = useState(data.locations);
   const [range, setRange] = useState<7 | 14 | 30>(30);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const handleRangeUpdate = (val: 7 | 14 | 30) => {
     setRange(val);

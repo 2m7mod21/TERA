@@ -19,7 +19,7 @@ export async function getFailedLogins(cursor?: string) {
 
   const hasMore = items.length > 25;
   const entries = hasMore ? items.slice(0, 25) : items;
-  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1].id : null };
+  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1]!.id : null };
 }
 
 export async function getActiveSessions(userId?: string) {

@@ -5,11 +5,11 @@ import { createPortal } from "react-dom";
 import {
   ShieldAlert, CheckCircle, Trash2, Ban, Eye, Search, Filter,
   ChevronDown, RotateCcw, Flag, AlertTriangle, Clock, Users,
-  BarChart3, Loader2, UserX, EyeOff, MessageSquare, UserCheck,
+  BarChart3, Loader2, UserX, EyeOff, MessageSquare,
   RefreshCw,
 } from "lucide-react";
 import {
-  getReports, getReportsStats, resolveReport, moderateContent, moderateUser, assignReport,
+  getReports, getReportsStats, resolveReport, moderateContent, moderateUser,
 } from "@/server/actions/admin/reports";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Database, RefreshCw, Key, ShieldAlert } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { getDatabaseInfo } from "@/server/actions/admin/system";
 
 type DatabaseClientProps = {

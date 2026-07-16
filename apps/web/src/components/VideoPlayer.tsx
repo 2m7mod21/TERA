@@ -113,6 +113,54 @@ export default function VideoPlayer({
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // Intersection Observer to auto-pause when out of viewport, autoplay when in view
+  useEffect(() => {
+    const el = containerRef.current;
+    const v = videoRef.current;
+    if (!el || !v) return;
+
+    let wasPlaying = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          if (wasPlaying && v.paused) {
+            v.play().catch(() => {});
+          }
+        } else if (entry.intersectionRatio < 0.2) {
+          if (!v.paused) {
+            wasPlaying = true;
+            v.pause();
+          }
+        }
+      },
+      {
+        threshold: [0.15, 0.5],
+      }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Pause when browser tab hidden
+  useEffect(() => {
+    const handler = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (document.hidden && !v.paused) {
+        v.pause();
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
+
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;

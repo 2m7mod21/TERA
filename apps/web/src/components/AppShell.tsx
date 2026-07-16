@@ -8,7 +8,7 @@ import TopNav from "@/components/TopNav";
 import RightSidebar from "@/components/RightSidebar";
 import {
   Home, MessageCircle, Bell, Film, Bookmark,
-  Settings, Shield, User, Users,
+  Settings, Shield, Users,
 } from "lucide-react";
 
 /**

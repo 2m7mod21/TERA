@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Headphones, CheckCircle, MessageSquare, CornerDownRight, Clock } from "lucide-react";
+import { Headphones, MessageSquare } from "lucide-react";
 import { getSupportTickets, getTicketMessages, replyToTicket, resolveTicket } from "@/server/actions/admin/notifications";
 
 export default function SupportClient({

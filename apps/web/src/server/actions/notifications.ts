@@ -3,6 +3,7 @@
 import { auth } from "@/server/auth/config";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getOrSet, invalidate, CacheKeys } from "@/lib/cache";
 
 export type NotificationType =
   | "FOLLOW"
@@ -59,24 +60,28 @@ export async function getNotifications(filter: "all" | "unread" = "all", limit =
 
 export async function getUnreadCount() {
   const session = await auth();
-  if (!session?.user) return 0;
-  try {
-    return prisma.notification.count({
-      where: { receiverId: session.user.id, isRead: false },
-    });
-  } catch {
-    return 0;
-  }
+  if (!session?.user?.id) return 0;
+  const userId = session.user.id;
+  return getOrSet(CacheKeys.notifCount(userId), 15, async () => {
+    try {
+      return await prisma.notification.count({
+        where: { receiverId: userId, isRead: false },
+      });
+    } catch {
+      return 0;
+    }
+  });
 }
 
 export async function markNotificationAsRead(id: string) {
   const session = await auth();
-  if (!session?.user) return { success: false };
+  if (!session?.user?.id) return { success: false };
   try {
     await prisma.notification.update({
       where: { id, receiverId: session.user.id },
       data: { isRead: true },
     });
+    await invalidate(CacheKeys.notifCount(session.user.id));
     return { success: true };
   } catch {
     return { success: false };
@@ -85,12 +90,13 @@ export async function markNotificationAsRead(id: string) {
 
 export async function markNotificationAsUnread(id: string) {
   const session = await auth();
-  if (!session?.user) return { success: false };
+  if (!session?.user?.id) return { success: false };
   try {
     await prisma.notification.update({
       where: { id, receiverId: session.user.id },
       data: { isRead: false },
     });
+    await invalidate(CacheKeys.notifCount(session.user.id));
     return { success: true };
   } catch {
     return { success: false };
@@ -99,12 +105,13 @@ export async function markNotificationAsUnread(id: string) {
 
 export async function markAllRead() {
   const session = await auth();
-  if (!session?.user) return { success: false };
+  if (!session?.user?.id) return { success: false };
   try {
     await prisma.notification.updateMany({
       where: { receiverId: session.user.id, isRead: false },
       data: { isRead: true },
     });
+    await invalidate(CacheKeys.notifCount(session.user.id));
     revalidatePath("/notifications");
     return { success: true };
   } catch {
@@ -114,11 +121,12 @@ export async function markAllRead() {
 
 export async function deleteNotification(id: string) {
   const session = await auth();
-  if (!session?.user) return { success: false };
+  if (!session?.user?.id) return { success: false };
   try {
     await prisma.notification.delete({
       where: { id, receiverId: session.user.id },
     });
+    await invalidate(CacheKeys.notifCount(session.user.id));
     return { success: true };
   } catch {
     return { success: false };
@@ -127,11 +135,12 @@ export async function deleteNotification(id: string) {
 
 export async function deleteAllNotifications() {
   const session = await auth();
-  if (!session?.user) return { success: false };
+  if (!session?.user?.id) return { success: false };
   try {
     await prisma.notification.deleteMany({
       where: { receiverId: session.user.id },
     });
+    await invalidate(CacheKeys.notifCount(session.user.id));
     return { success: true };
   } catch {
     return { success: false };
@@ -206,6 +215,7 @@ export async function createNotification(data: {
       },
       include: { sender: { include: { profile: true } } },
     });
+    await invalidate(CacheKeys.notifCount(data.receiverId));
     return n;
   } catch (error) {
     console.error("createNotification error:", error);

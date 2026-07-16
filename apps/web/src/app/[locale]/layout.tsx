@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { locales, isRTL } from "@/i18n/config";
 import "../globals.css";
 import { Providers } from "@/lib/providers";
+import { WebVitals } from "@/components/WebVitals";
 
 import type { Viewport } from "next";
 
@@ -50,7 +51,10 @@ export default async function RootLayout({ children, params }: LayoutProps) {
     <html lang={locale} dir={dir} className="dark">
       <body className="antialiased min-h-screen text-slate-100 bg-zinc-950">
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <Providers>{children}</Providers>
+          <Providers>
+            <WebVitals />
+            {children}
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -140,7 +140,7 @@ export async function getReports(filters?: {
 
   const hasMore = reports.length > PAGE_SIZE;
   const items = hasMore ? reports.slice(0, PAGE_SIZE) : reports;
-  return { reports: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { reports: items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
 }
 
 // ── Single report detail ────────────────────────────────────────────────────────
@@ -325,7 +325,7 @@ export async function moderateContent(
     data: {
       reportId,
       adminId: ctx.userId,
-      actionType: actionTypeMap[action],
+      actionType: actionTypeMap[action]!,
       reason,
     },
   });
@@ -447,7 +447,7 @@ export async function moderateUser(
     data: {
       reportId,
       adminId: ctx.userId,
-      actionType: actionTypeMap[action],
+      actionType: actionTypeMap[action]!,
       reason,
       metadata: JSON.stringify({ strikeNumber, severity, violationType }),
     },
@@ -532,7 +532,7 @@ export async function getAppeals(filters?: {
 
   const hasMore = appeals.length > PAGE_SIZE;
   const items = hasMore ? appeals.slice(0, PAGE_SIZE) : appeals;
-  return { appeals: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { appeals: items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
 }
 
 export async function reviewAppeal(
@@ -642,7 +642,7 @@ export async function getModerationQueue(cursor?: string) {
 
   const hasMore = items.length > PAGE_SIZE;
   const entries = hasMore ? items.slice(0, PAGE_SIZE) : items;
-  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1].id : null };
+  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1]!.id : null };
 }
 
 export async function moderationDecision(

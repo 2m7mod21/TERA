@@ -37,7 +37,7 @@ export async function getContent(filters: ContentFilters = {}) {
 
   const hasMore = posts.length > PAGE_SIZE;
   const items = hasMore ? posts.slice(0, PAGE_SIZE) : posts;
-  return { posts: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { posts: items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
 }
 
 export async function deletePost(postId: string) {

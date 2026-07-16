@@ -17,7 +17,7 @@ export async function getMassNotifications(cursor?: string) {
 
   const hasMore = items.length > 20;
   const entries = hasMore ? items.slice(0, 20) : items;
-  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1].id : null };
+  return { items: entries, nextCursor: hasMore ? entries[entries.length - 1]!.id : null };
 }
 
 export async function sendMassNotification(data: {
@@ -81,7 +81,7 @@ export async function getSupportTickets(
 
   const hasMore = tickets.length > 20;
   const items = hasMore ? tickets.slice(0, 20) : tickets;
-  return { tickets: items, nextCursor: hasMore ? items[items.length - 1].id : null };
+  return { tickets: items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
 }
 
 export async function getTicketMessages(ticketId: string) {

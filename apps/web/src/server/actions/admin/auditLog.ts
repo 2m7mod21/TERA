@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireAdmin, writeAuditLog } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export type AuditFilters = {
   adminId?: string;
@@ -38,6 +38,6 @@ export async function getAuditLogs(filters: AuditFilters = {}) {
 
   return {
     logs: items.map((l) => ({ ...l, admin: adminMap[l.adminId] })),
-    nextCursor: hasMore ? items[items.length - 1].id : null,
+    nextCursor: hasMore ? items[items.length - 1]!.id : null,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Monitor, RefreshCw, Cpu, HardDrive, Clock, Activity } from "lucide-react";
+import { RefreshCw, Cpu, HardDrive, Activity } from "lucide-react";
 import { getSystemMetrics } from "@/server/actions/admin/system";
 
 type SystemClientProps = {

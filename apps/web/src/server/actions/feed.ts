@@ -3,6 +3,7 @@
 import { auth } from "@/server/auth/config";
 import { prisma } from "@/lib/db";
 import { FeedEngine } from "@/server/services/feed-engine/feed-engine.service";
+import { getOrSet, CacheKeys } from "@/lib/cache";
 
 // ─── Ranked Feed ──────────────────────────────────────────────────────────────
 
@@ -39,7 +40,11 @@ export async function getFeedPosts(
 
   const commonIncludes = {
     user: { include: { profile: true } },
-    reactions: true,
+    reactions: session?.user?.id ? {
+      where: { userId: session.user.id },
+      select: { type: true, userId: true },
+      take: 1,
+    } : undefined,
     comments: {
       where: { parentId: null },
       take: 3,
@@ -47,8 +52,12 @@ export async function getFeedPosts(
       include: { user: { include: { profile: true } } },
     },
     poll: { include: { options: { include: { votes: true } } } },
-    _count: { select: { comments: true, reactions: true } },
-    shares: { select: { userId: true, content: true } },
+    _count: { select: { comments: true, reactions: true, shares: true } },
+    shares: session?.user?.id ? {
+      where: { userId: session.user.id },
+      select: { userId: true, content: true },
+      take: 1,
+    } : undefined,
     bookmarks: session?.user?.id ? {
       where: { userId: session.user.id },
       select: { id: true },
@@ -56,34 +65,27 @@ export async function getFeedPosts(
     parentPost: {
       include: {
         user: { include: { profile: true } },
-        reactions: true,
+        reactions: session?.user?.id ? {
+          where: { userId: session.user.id },
+          select: { type: true, userId: true },
+          take: 1,
+        } : undefined,
         poll: { include: { options: { include: { votes: true } } } },
-        shares: { select: { userId: true, content: true } },
-        _count: { select: { comments: true, reactions: true } },
+        shares: session?.user?.id ? {
+          where: { userId: session.user.id },
+          select: { userId: true, content: true },
+          take: 1,
+        } : undefined,
+        _count: { select: { comments: true, reactions: true, shares: true } },
       }
     },
   };
 
-  if (feedType === "recent") {
-    // ── Recent mode: strict chronological, NEVER altered by algorithm ──
-    const posts = await prisma.post.findMany({
-      where,
-      take: limit + 1,
-      cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
-      orderBy: { createdAt: "desc" },
-      include: commonIncludes,
-    });
-
-    const hasMore = posts.length > limit;
-    const data = posts.slice(0, limit);
-    const nextCursor = hasMore ? posts[limit - 1]?.id : null;
-
-    return { posts: data, nextCursor };
-  } else {
-    // ── For You mode: two-stage recommendation engine ──
-    if (!session?.user?.id) {
-      // Unauthenticated fallback: simple recent feed from trending candidates
+  const cacheKey = CacheKeys.feed(session?.user?.id ?? "anonymous", feedType, cursor ?? null);
+  
+  return getOrSet(cacheKey, 30, async () => {
+    if (feedType === "recent") {
+      // ── Recent mode: strict chronological, NEVER altered by algorithm ──
       const posts = await prisma.post.findMany({
         where,
         take: limit + 1,
@@ -92,40 +94,59 @@ export async function getFeedPosts(
         orderBy: { createdAt: "desc" },
         include: commonIncludes,
       });
+
       const hasMore = posts.length > limit;
       const data = posts.slice(0, limit);
-      return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id : null };
-    }
+      const nextCursor = hasMore ? posts[limit - 1]?.id : null;
 
-    try {
-      const rankedPosts = await FeedEngine.getRankedFeed(
-        session.user.id,
-        limit,
-        sessionContext
-      );
+      return { posts: data, nextCursor };
+    } else {
+      // ── For You mode: two-stage recommendation engine ──
+      if (!session?.user?.id) {
+        // Unauthenticated fallback: simple recent feed from trending candidates
+        const posts = await prisma.post.findMany({
+          where,
+          take: limit + 1,
+          cursor: cursor ? { id: cursor } : undefined,
+          skip: cursor ? 1 : 0,
+          orderBy: { createdAt: "desc" },
+          include: commonIncludes,
+        });
+        const hasMore = posts.length > limit;
+        const data = posts.slice(0, limit);
+        return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id : null };
+      }
 
-      // Note: cursor-based pagination is handled by the candidate pool size.
-      // For production, pass cursor into candidateGenerator to offset queries.
-      return {
-        posts: rankedPosts,
-        nextCursor: rankedPosts.length >= limit ? rankedPosts[rankedPosts.length - 1]?.id ?? null : null,
-      };
-    } catch (error) {
-      console.error("[FeedEngine] Error in getRankedFeed, falling back to recent:", error);
-      // Graceful fallback to recency
-      const posts = await prisma.post.findMany({
-        where,
-        take: limit + 1,
-        cursor: cursor ? { id: cursor } : undefined,
-        skip: cursor ? 1 : 0,
-        orderBy: { createdAt: "desc" },
-        include: commonIncludes,
-      });
-      const hasMore = posts.length > limit;
-      const data = posts.slice(0, limit);
-      return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null };
+      try {
+        const rankedPosts = await FeedEngine.getRankedFeed(
+          session.user.id,
+          limit,
+          sessionContext
+        );
+
+        // Note: cursor-based pagination is handled by the candidate pool size.
+        // For production, pass cursor into candidateGenerator to offset queries.
+        return {
+          posts: rankedPosts,
+          nextCursor: rankedPosts.length >= limit ? rankedPosts[rankedPosts.length - 1]?.id ?? null : null,
+        };
+      } catch (error) {
+        console.error("[FeedEngine] Error in getRankedFeed, falling back to recent:", error);
+        // Graceful fallback to recency
+        const posts = await prisma.post.findMany({
+          where,
+          take: limit + 1,
+          cursor: cursor ? { id: cursor } : undefined,
+          skip: cursor ? 1 : 0,
+          orderBy: { createdAt: "desc" },
+          include: commonIncludes,
+        });
+        const hasMore = posts.length > limit;
+        const data = posts.slice(0, limit);
+        return { posts: data, nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null };
+      }
     }
-  }
+  });
 }
 
 
@@ -144,47 +165,53 @@ export async function getSuggestedUsers(limit = 6) {
 
   const excludeIds = [...myFollowing, myId];
 
-  // Candidate users I do not follow yet
-  const candidates = await prisma.user.findMany({
-    where: { id: { notIn: excludeIds } },
-    take: 50,
-    include: {
-      profile: true,
-      followers: { select: { followerId: true } },
-    },
-  });
+  const cacheKey = CacheKeys.suggestedUsers(myId);
 
-  // Score by mutual follows
-  const scored = candidates.map((u: any) => {
-    const theirFollowerIds = new Set(u.followers.map((f: any) => f.followerId));
-    const mutualCount = myFollowing.filter((id: string) => theirFollowerIds.has(id)).length;
-    return { ...u, mutualCount, _score: mutualCount * 10 + u.followers.length };
-  });
+  return getOrSet(cacheKey, 120, async () => {
+    // Candidate users I do not follow yet
+    const candidates = await prisma.user.findMany({
+      where: { id: { notIn: excludeIds } },
+      take: 50,
+      include: {
+        profile: true,
+        followers: { select: { followerId: true } },
+      },
+    });
 
-  return scored
-    .sort((a: any, b: any) => b._score - a._score)
-    .slice(0, limit);
+    // Score by mutual follows
+    const scored = candidates.map((u: any) => {
+      const theirFollowerIds = new Set(u.followers.map((f: any) => f.followerId));
+      const mutualCount = myFollowing.filter((id: string) => theirFollowerIds.has(id)).length;
+      return { ...u, mutualCount, _score: mutualCount * 10 + u.followers.length };
+    });
+
+    return scored
+      .sort((a: any, b: any) => b._score - a._score)
+      .slice(0, limit);
+  });
 }
 
 // ─── Trending Hashtags ────────────────────────────────────────────────────────
 
 export async function getTrendingTopics(limit = 8) {
-  const since = new Date(Date.now() - 24 * 3_600_000);
-  const posts = await prisma.post.findMany({
-    where: { createdAt: { gte: since }, visibility: "PUBLIC" },
-    select: { content: true },
+  return getOrSet(CacheKeys.trending(), 300, async () => {
+    const since = new Date(Date.now() - 24 * 3_600_000);
+    const posts = await prisma.post.findMany({
+      where: { createdAt: { gte: since }, visibility: "PUBLIC" },
+      select: { content: true },
+    });
+
+    const counts: Record<string, number> = {};
+    for (const p of posts) {
+      const tags = (p.content?.match(/#\w+/g) ?? []) as string[];
+      tags.forEach((t: string) => { counts[t] = (counts[t] ?? 0) + 1; });
+    }
+
+    return Object.entries(counts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, limit)
+      .map(([tag, count]) => ({ tag, count }));
   });
-
-  const counts: Record<string, number> = {};
-  for (const p of posts) {
-    const tags = (p.content?.match(/#\w+/g) ?? []) as string[];
-    tags.forEach((t: string) => { counts[t] = (counts[t] ?? 0) + 1; });
-  }
-
-  return Object.entries(counts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, limit)
-    .map(([tag, count]) => ({ tag, count }));
 }
 
 // ─── Active Friends ───────────────────────────────────────────────────────────
@@ -202,20 +229,24 @@ export async function getActiveFriends(limit = 8) {
 
   if (ids.length === 0) return [];
 
-  const recentActivity = await prisma.post.findMany({
-    where: { userId: { in: ids }, createdAt: { gte: since } },
-    select: { userId: true },
-    distinct: ["userId"],
-    take: limit,
-  });
+  const cacheKey = CacheKeys.activeFriends(session.user.id);
 
-  const activeIds = recentActivity.map((p: { userId: string }) => p.userId);
-  if (activeIds.length === 0) return [];
+  return getOrSet(cacheKey, 60, async () => {
+    const recentActivity = await prisma.post.findMany({
+      where: { userId: { in: ids }, createdAt: { gte: since } },
+      select: { userId: true },
+      distinct: ["userId"],
+      take: limit,
+    });
 
-  return prisma.user.findMany({
-    where: { id: { in: activeIds } },
-    select: { id: true, profile: { select: { displayName: true, avatarUrl: true, username: true } } },
-    take: limit,
+    const activeIds = recentActivity.map((p: { userId: string }) => p.userId);
+    if (activeIds.length === 0) return [];
+
+    return prisma.user.findMany({
+      where: { id: { in: activeIds } },
+      select: { id: true, profile: { select: { displayName: true, avatarUrl: true, username: true } } },
+      take: limit,
+    });
   });
 }
 
@@ -244,7 +275,11 @@ export async function getVideoPosts(cursor?: string, limit = 12) {
     orderBy: { createdAt: "desc" },
     include: {
       user: { include: { profile: true } },
-      reactions: true,
+      reactions: session?.user?.id ? {
+        where: { userId: session.user.id },
+        select: { type: true, userId: true },
+        take: 1,
+      } : undefined,
       _count: { select: { comments: true, reactions: true } },
     },
   });

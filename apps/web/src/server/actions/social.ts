@@ -7,6 +7,8 @@ import { createNotification } from "./notifications";
 import { emitNotification } from "@/server/socket/index";
 import { InteractionLogger } from "@/server/services/feed-engine/interaction-logger";
 
+import { getOrSet, invalidatePattern } from "@/lib/cache";
+
 export async function followUser(targetUserId: string) {
   const session = await auth();
   if (!session?.user?.id) return { success: false, error: "Unauthorized" };
@@ -16,6 +18,19 @@ export async function followUser(targetUserId: string) {
     await prisma.follow.create({
       data: { followerId: session.user.id, followeeId: targetUserId },
     });
+    
+    // Invalidate cached profile views for both target and self
+    const [targetProfile, selfProfile] = await Promise.all([
+      prisma.profile.findUnique({ where: { userId: targetUserId }, select: { username: true } }),
+      prisma.profile.findUnique({ where: { userId: session.user.id }, select: { username: true } }),
+    ]);
+    if (targetProfile) {
+      await invalidatePattern(`profile:username:${targetProfile.username}:*`);
+    }
+    if (selfProfile) {
+      await invalidatePattern(`profile:username:${selfProfile.username}:*`);
+    }
+
     // Wire v2 Interaction Logging
     await InteractionLogger.log({
       userId: session.user.id,
@@ -48,6 +63,19 @@ export async function unfollowUser(targetUserId: string) {
     await prisma.follow.deleteMany({
       where: { followerId: session.user.id, followeeId: targetUserId },
     });
+
+    // Invalidate cached profile views
+    const [targetProfile, selfProfile] = await Promise.all([
+      prisma.profile.findUnique({ where: { userId: targetUserId }, select: { username: true } }),
+      prisma.profile.findUnique({ where: { userId: session.user.id }, select: { username: true } }),
+    ]);
+    if (targetProfile) {
+      await invalidatePattern(`profile:username:${targetProfile.username}:*`);
+    }
+    if (selfProfile) {
+      await invalidatePattern(`profile:username:${selfProfile.username}:*`);
+    }
+
     // Wire v2 Interaction Logging
     await InteractionLogger.log({
       userId: session.user.id,
@@ -64,127 +92,131 @@ export async function unfollowUser(targetUserId: string) {
 
 export async function getProfileByUsername(username: string) {
   const session = await auth();
-  const profile = await prisma.profile.findUnique({
-    where: { username },
-    include: {
-      user: {
-        include: {
-          followers: true,
-          following: true,
+  const cacheKey = `profile:username:${username}:viewer:${session?.user?.id ?? "anonymous"}`;
+
+  return getOrSet(cacheKey, 30, async () => {
+    const profile = await prisma.profile.findUnique({
+      where: { username },
+      include: {
+        user: {
+          include: {
+            followers: true,
+            following: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!profile) return null;
+    if (!profile) return null;
 
-  let isFollowing = false;
-  let isOwnProfile = false;
-  let isMuted = false;
-  let isRestricted = false;
+    let isFollowing = false;
+    let isOwnProfile = false;
+    let isMuted = false;
+    let isRestricted = false;
 
-  if (session?.user?.id) {
-    isOwnProfile = session.user.id === profile.userId;
-    if (!isOwnProfile) {
-      const [follow, mute, restrict] = await Promise.all([
-        prisma.follow.findFirst({
-          where: { followerId: session.user.id, followeeId: profile.userId },
-        }),
-        prisma.mute.findFirst({
-          where: { muterId: session.user.id, mutedId: profile.userId },
-        }),
-        (prisma as any).userRestrict.findFirst({
-          where: { restrictorId: session.user.id, restrictedId: profile.userId },
-        }),
-      ]);
-      isFollowing = !!follow;
-      isMuted = !!mute;
-      isRestricted = !!restrict;
+    if (session?.user?.id) {
+      isOwnProfile = session.user.id === profile.userId;
+      if (!isOwnProfile) {
+        const [follow, mute, restrict] = await Promise.all([
+          prisma.follow.findFirst({
+            where: { followerId: session.user.id, followeeId: profile.userId },
+          }),
+          prisma.mute.findFirst({
+            where: { muterId: session.user.id, mutedId: profile.userId },
+          }),
+          (prisma as any).userRestrict.findFirst({
+            where: { restrictorId: session.user.id, restrictedId: profile.userId },
+          }),
+        ]);
+        isFollowing = !!follow;
+        isMuted = !!mute;
+        isRestricted = !!restrict;
+      }
     }
-  }
 
-  const visibilityCondition = isOwnProfile
-    ? { in: ["PUBLIC", "FRIENDS", "PRIVATE"] }
-    : isFollowing
-    ? { in: ["PUBLIC", "FRIENDS"] }
-    : "PUBLIC";
+    const visibilityCondition = isOwnProfile
+      ? { in: ["PUBLIC", "FRIENDS", "PRIVATE"] }
+      : isFollowing
+      ? { in: ["PUBLIC", "FRIENDS"] }
+      : "PUBLIC";
 
-  // Query actual posts matching authorized visibility
-  const dbPosts = await prisma.post.findMany({
-    where: {
-      userId: profile.userId,
-      visibility: visibilityCondition,
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      reactions: true,
-      comments: {
-        orderBy: { createdAt: "asc" },
-        include: { user: { include: { profile: true } } },
+    // Query actual posts matching authorized visibility
+    const dbPosts = await prisma.post.findMany({
+      where: {
+        userId: profile.userId,
+        visibility: visibilityCondition,
       },
-      _count: { select: { comments: true, reactions: true } },
-      parentPost: {
-        include: {
-          user: { include: { profile: true } },
-          reactions: true,
-          poll: { include: { options: { include: { votes: true } } } },
-          shares: { select: { userId: true, content: true } },
-          _count: { select: { comments: true, reactions: true } },
-        }
+      orderBy: { createdAt: "desc" },
+      include: {
+        reactions: true,
+        comments: {
+          orderBy: { createdAt: "asc" },
+          include: { user: { include: { profile: true } } },
+        },
+        _count: { select: { comments: true, reactions: true } },
+        parentPost: {
+          include: {
+            user: { include: { profile: true } },
+            reactions: true,
+            poll: { include: { options: { include: { votes: true } } } },
+            shares: { select: { userId: true, content: true } },
+            _count: { select: { comments: true, reactions: true } },
+          }
+        },
+        shares: { select: { userId: true, content: true } },
+        bookmarks: session?.user?.id ? {
+          where: { userId: session.user.id },
+          select: { id: true },
+        } : undefined,
       },
-      shares: { select: { userId: true, content: true } },
-      bookmarks: session?.user?.id ? {
-        where: { userId: session.user.id },
-        select: { id: true },
-      } : undefined,
-    },
+    });
+
+    // Get pinned posts matching authorized visibility
+    const pinnedPosts = await (prisma.post as any).findMany({
+      where: {
+        userId: profile.userId,
+        isPinned: true,
+        visibility: visibilityCondition,
+      },
+      include: {
+        user: { include: { profile: true } },
+        reactions: true,
+        _count: { select: { comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Map posts to include the user object expected by PostCard
+    const postsWithUser = dbPosts.map((post: any) => ({
+      ...post,
+      user: {
+        id: profile.user.id,
+        profile: {
+          avatarUrl: profile.avatarUrl,
+          displayName: profile.displayName,
+          username: profile.username,
+        },
+      },
+    }));
+
+    const mappedProfile = {
+      ...profile,
+      user: {
+        ...profile.user,
+        posts: postsWithUser,
+      },
+    };
+
+    return {
+      profile: mappedProfile,
+      isFollowing,
+      isOwnProfile,
+      currentUserId: session?.user?.id ?? null,
+      isMuted,
+      isRestricted,
+      pinnedPosts,
+    };
   });
-
-  // Get pinned posts matching authorized visibility
-  const pinnedPosts = await (prisma.post as any).findMany({
-    where: {
-      userId: profile.userId,
-      isPinned: true,
-      visibility: visibilityCondition,
-    },
-    include: {
-      user: { include: { profile: true } },
-      reactions: true,
-      _count: { select: { comments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // Map posts to include the user object expected by PostCard
-  const postsWithUser = dbPosts.map((post: any) => ({
-    ...post,
-    user: {
-      id: profile.user.id,
-      profile: {
-        avatarUrl: profile.avatarUrl,
-        displayName: profile.displayName,
-        username: profile.username,
-      },
-    },
-  }));
-
-  const mappedProfile = {
-    ...profile,
-    user: {
-      ...profile.user,
-      posts: postsWithUser,
-    },
-  };
-
-  return {
-    profile: mappedProfile,
-    isFollowing,
-    isOwnProfile,
-    currentUserId: session?.user?.id ?? null,
-    isMuted,
-    isRestricted,
-    pinnedPosts,
-  };
 }
 
 export async function updateProfile(data: {
@@ -199,10 +231,16 @@ export async function updateProfile(data: {
   if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
   try {
-    await prisma.profile.update({
+    const profile = await prisma.profile.update({
       where: { userId: session.user.id },
       data,
     });
+    
+    // Invalidate cached profile views
+    if (profile?.username) {
+      await invalidatePattern(`profile:username:${profile.username}:*`);
+    }
+
     revalidatePath("/");
     return { success: true };
   } catch {

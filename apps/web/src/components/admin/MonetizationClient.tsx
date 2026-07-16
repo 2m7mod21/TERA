@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { DollarSign, Landmark, TrendingUp, RefreshCw, MessageSquare } from "lucide-react";
+import { Landmark } from "lucide-react";
 import { getTransactions } from "@/server/actions/admin/monetization";
 
 type MonetizationClientProps = {

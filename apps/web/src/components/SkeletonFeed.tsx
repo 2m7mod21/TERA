@@ -59,3 +59,13 @@ export function SkeletonSidebar() {
     </div>
   );
 }
+
+export default function SkeletonFeed() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <SkeletonPost key={i} />
+      ))}
+    </div>
+  );
+}

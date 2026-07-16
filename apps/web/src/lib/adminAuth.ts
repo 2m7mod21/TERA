@@ -170,7 +170,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
     return {
       userId: session.user.id,
       role: "SUPER_ADMIN",
-      permissions: DEFAULT_PERMISSIONS["SUPER_ADMIN"],
+      permissions: DEFAULT_PERMISSIONS["SUPER_ADMIN"]!,
       adminUserId: session.user.id,
     };
   }
@@ -183,7 +183,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
     // ignore parse errors
   }
 
-  const defaultPerms = DEFAULT_PERMISSIONS[adminUser.role.name] || {};
+  const defaultPerms: PermissionMatrix = (DEFAULT_PERMISSIONS[adminUser.role.name] as PermissionMatrix | undefined) ?? {};
   const effectivePerms: PermissionMatrix = { ...defaultPerms, ...storedPermissions };
 
   return {

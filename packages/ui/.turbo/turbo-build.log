@@ -1,0 +1,12 @@
+
+> ui@0.1.0 build
+> tsc
+
+error TS18003: No inputs were found in config file 'C:/Users/Mahmoud/Desktop/TERA/packages/ui/tsconfig.json'. Specified 'include' paths were '["src/**/*"]' and 'exclude' paths were '["node_modules","dist"]'.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path C:\Users\Mahmoud\Desktop\TERA\packages\ui
+npm error workspace ui@0.1.0
+npm error location C:\Users\Mahmoud\Desktop\TERA\packages\ui
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc

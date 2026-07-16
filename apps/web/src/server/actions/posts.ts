@@ -5,6 +5,7 @@ import { PostRepository } from "@/server/repositories/post.repository";
 import { postCreateSchema, commentCreateSchema } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { invalidatePattern, CacheKeys } from "@/lib/cache";
 import { createNotification } from "./notifications";
 import { emitNotification } from "@/server/socket/index";
 import { persistMentions } from "./mentions";
@@ -70,6 +71,8 @@ export async function createPost(formData: any) {
       await persistMentions(result.data.content, session.user.id, { postId: post.id }, 10);
     }
 
+    await invalidatePattern(CacheKeys.feedPage(session.user.id));
+    await invalidatePattern("feed:anonymous:*");
     revalidatePath("/");
     return { success: true, post };
   } catch (error: any) {
@@ -139,7 +142,11 @@ export async function toggleReaction(data: {
       }
     }
 
-    if (data.postId) revalidatePath("/");
+    if (data.postId) {
+      await invalidatePattern(CacheKeys.feedPage(session.user.id));
+      await invalidatePattern("feed:anonymous:*");
+      revalidatePath("/");
+    }
     return { success: true, ...result };
   } catch (error) {
     console.error("Toggle reaction Action error:", error);
@@ -250,7 +257,11 @@ export async function addComment(commentData: any) {
       await persistMentions(content, session.user.id, { postId: postId ?? undefined, commentId: comment.id }, 5);
     }
 
-    if (postId) revalidatePath("/");
+    if (postId) {
+      await invalidatePattern(CacheKeys.feedPage(session.user.id));
+      await invalidatePattern("feed:anonymous:*");
+      revalidatePath("/");
+    }
     return { success: true, comment };
   } catch (error) {
     console.error("Add comment Action error:", error);
@@ -506,6 +517,8 @@ export async function deletePost(postId: string) {
       return { success: false, error: "Unauthorized or post not found" };
     }
     await prisma.post.delete({ where: { id: postId } });
+    await invalidatePattern(CacheKeys.feedPage(session.user.id));
+    await invalidatePattern("feed:anonymous:*");
     revalidatePath("/");
     return { success: true };
   } catch (error) {

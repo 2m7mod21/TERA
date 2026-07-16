@@ -63,7 +63,7 @@ function UserCard({ user, currentUserId }: { user: any; currentUserId: string })
           <div className="flex items-center gap-1.5">
             <p className="font-semibold text-sm text-zinc-100 hover:text-violet-400 transition-colors truncate">{profile?.displayName}</p>
             {actualUser?.verifiedBadge && (
-              <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" title="Verified" />
+              <Verified className="w-4 h-4 text-violet-400 fill-violet-400/20" aria-label="Verified" />
             )}
           </div>
         </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Shield, Key, EyeOff, Ban, Plus, Trash2, Landmark } from "lucide-react";
+import { Shield, Key, Ban, Plus, Trash2 } from "lucide-react";
 import { addBlockedIP, removeBlockedIP, terminateSession } from "@/server/actions/admin/security";
 
 export default function SecurityClient({
@@ -13,8 +13,8 @@ export default function SecurityClient({
   blockedIPs: any[];
   activeSessions: any[];
 }) {
-  const [blockedIPs, setBlockedIPs] = useState<any[]>(initialBlockedIPs);
-  const [sessions, setSessions] = useState<any[]>(initialSessions);
+  const [blockedIPs] = useState<any[]>(initialBlockedIPs);
+  const [sessions] = useState<any[]>(initialSessions);
   const [ipInput, setIpInput] = useState("");
   const [ipReason, setIpReason] = useState("");
   

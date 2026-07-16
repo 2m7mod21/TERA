@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Settings, Save, ShieldAlert, Cpu } from "lucide-react";
+import { Settings, ShieldAlert, Cpu } from "lucide-react";
 import { updateSetting } from "@/server/actions/admin/settings";
 
 export default function SettingsClient({ settings }: { settings: Record<string, any> }) {

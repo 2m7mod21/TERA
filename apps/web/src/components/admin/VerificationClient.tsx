@@ -1,8 +1,8 @@
 "use client";
 
-import React, { startTransition, useTransition } from "react";
-import { BadgeCheck, UserMinus, ShieldAlert, Award } from "lucide-react";
-import { revokeVerification, verifyUser } from "@/server/actions/admin/users";
+import React, { useTransition } from "react";
+import { BadgeCheck, UserMinus, Award } from "lucide-react";
+import { revokeVerification } from "@/server/actions/admin/users";
 
 export default function VerificationClient({ verifiedUsers }: { verifiedUsers: any[] }) {
   const [isPending, startTransitionHook] = useTransition();

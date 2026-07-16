@@ -1,7 +1,7 @@
 "use client";
 
-import React, { startTransition, useTransition } from "react";
-import { MessageSquare, ShieldAlert, Lock, Info } from "lucide-react";
+import React from "react";
+import { Lock, Info } from "lucide-react";
 
 type MessagesAdminClientProps = {
   stats: {
